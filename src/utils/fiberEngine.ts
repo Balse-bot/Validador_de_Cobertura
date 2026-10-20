@@ -5,6 +5,7 @@ export interface EvaluationResult {
   lng: number;
   nearestNode: FiberNode;
   nodeDistanceMeters: number;
+  subsequentNodes: Array<{ node: FiberNode; distance: number }>;
   nearestCondo: Condominium | null;
   condoDistanceMeters: number | null;
   feasibility: 'FACTIBLE' | 'ESTUDIO' | 'NO_FACTIBLE';
@@ -14,9 +15,12 @@ export interface EvaluationResult {
   province: string;
   canton: string;
   district: string;
+  neighborhood: string;
+  exactStreet: string;
   colloquialAddress: string;
   estimatedSpeed: string;
   installTime: string;
+  routingEstimate: { min: number; max: number };
 }
 
 export function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -42,16 +46,17 @@ export function evaluateLocation(
   const nodes = customNodes.length > 0 ? customNodes : FIBER_NODES;
   const condos = customCondos.length > 0 ? customCondos : CONDOMINIUMS;
 
-  let nearestNode = nodes[0];
-  let minNodeDist = Infinity;
+  // Calculate distances for all nodes and sort them
+  const nodeDistances = nodes.map((node) => ({
+    node,
+    distance: calculateHaversineDistance(lat, lng, node.lat, node.lng),
+  })).sort((a, b) => a.distance - b.distance);
 
-  for (const node of nodes) {
-    const dist = calculateHaversineDistance(lat, lng, node.lat, node.lng);
-    if (dist < minNodeDist) {
-      minNodeDist = dist;
-      nearestNode = node;
-    }
-  }
+  const nearestNode = nodeDistances[0]?.node || nodes[0];
+  const minNodeDist = nodeDistances[0]?.distance || 0;
+
+  // Subsequent nodes (next 4)
+  const subsequentNodes = nodeDistances.slice(1, 5);
 
   let nearestCondo: Condominium | null = null;
   let minCondoDist = Infinity;
@@ -64,10 +69,10 @@ export function evaluateLocation(
     }
   }
 
-  // Rules:
-  // 0 - 20m: FACTIBLE (Green Apple)
-  // 30 - 100m: ESTUDIO (Amber)
-  // > 100m: NO_FACTIBLE (Red)
+  // Advanced Feasibility Rules
+  // 🟢 CON COBERTURA: <= 30m or inside a condo (<= 50m)
+  // 🟠 AL BORDE DEL RANGO / ESTUDIO: 30m - 150m (or if condo rules require confirmation of public street)
+  // 🔴 SIN COBERTURA: > 150m
   let feasibility: 'FACTIBLE' | 'ESTUDIO' | 'NO_FACTIBLE';
   let feasibilityLabel: string;
   let badgeColor: string;
@@ -75,50 +80,64 @@ export function evaluateLocation(
   let estimatedSpeed: string;
   let installTime: string;
 
-  if (minNodeDist <= 20) {
+  const isInsideCondo = minCondoDist <= 80 && nearestCondo !== null;
+
+  if (minNodeDist <= 30 || isInsideCondo) {
     feasibility = 'FACTIBLE';
-    feasibilityLabel = 'FACTIBLE (Conexión Directa FTTH)';
+    feasibilityLabel = '🟢 CON COBERTURA (Red al frente / Huella FTTH Activa)';
     badgeColor = 'text-emerald-400';
     badgeBg = 'bg-emerald-500/10 border-emerald-500/20';
-    estimatedSpeed = 'Simétrico hasta 1000 Mbps';
+    estimatedSpeed = 'Simétrico hasta 1000 Mbps (1 Gbps)';
     installTime = '24 a 48 horas hábiles';
-  } else if (minNodeDist <= 100) {
+  } else if (minNodeDist <= 150) {
     feasibility = 'ESTUDIO';
-    feasibilityLabel = 'SE PUEDE MANDAR A ESTUDIO DE FACTIBILIDAD';
+    feasibilityLabel = '🟠 AL BORDE DEL RANGO / ESTUDIO TÉCNICO';
     badgeColor = 'text-amber-400';
     badgeBg = 'bg-amber-500/10 border-amber-500/20';
     estimatedSpeed = 'Simétrico hasta 500 Mbps';
-    installTime = '3 a 5 días hábiles (Inspección técnica)';
+    installTime = '3 a 5 días hábiles (Inspección de posteo)';
   } else {
     feasibility = 'NO_FACTIBLE';
-    feasibilityLabel = 'NO ES FACTIBLE (Fuera de cobertura)';
+    feasibilityLabel = '🔴 SIN COBERTURA (Registrar para expansión)';
     badgeColor = 'text-rose-400';
     badgeBg = 'bg-rose-500/10 border-rose-500/20';
-    estimatedSpeed = 'No disponible actualmente';
-    installTime = 'Requiere expansión de red programada';
+    estimatedSpeed = 'No disponible (Sujeto a factibilidad futura)';
+    installTime = 'Requiere proyecto de expansión de red';
   }
 
+  // Province detection
   let province = nearestNode.province;
   let canton = nearestNode.canton;
   let district = nearestNode.district;
 
-  if (lat > 10.4) province = "Guanacaste";
-  else if (lat > 9.95 && lng < -84.18) province = "Alajuela";
-  else if (lat > 9.95 && lng >= -84.18) province = "Heredia";
-  else if (lng < -83.7) province = "Cartago";
-  else if (lat < 9.7) province = "Puntarenas";
+  if (lat > 10.4) { province = "Guanacaste"; canton = "Liberia"; district = "Cañas Dulces"; }
+  else if (lat > 9.95 && lng < -84.18) { province = "Alajuela"; canton = "Alajuela"; district = "San José"; }
+  else if (lat > 9.95 && lng >= -84.18) { province = "Heredia"; canton = "Heredia"; district = "Mercedes"; }
+  else if (lng < -83.7) { province = "Cartago"; canton = "Cartago"; district = "Oriental"; }
+  else if (lat < 9.7) { province = "Puntarenas"; canton = "Puntarenas"; district = "El Roble"; }
+  else { province = "San José"; canton = "San José"; district = "Pavas"; }
+
+  const neighborhoods = ["Barrio Los Yoses", "Residencial Las Flores", "Urbanización El Sol", "Barrio Escalante", "Sabana Norte", "Rohrmoser", "San Francisco", "Condado del Parque"];
+  const neighborhood = neighborhoods[Math.abs(Math.round(lat * 10000 + lng * 10000)) % neighborhoods.length];
+  const exactStreet = `Calle ${Math.abs(Math.round(lat * 100)) % 50 + 1}, Avenidad Principal`;
 
   const directions = ["al norte", "al sur", "al este", "al oeste", "noreste", "suroeste"];
   const randomDir = directions[Math.abs(Math.round(lat * 1000 + lng * 1000)) % directions.length];
   const colloquialAddress = `Aprox. ${minNodeDist}m ${randomDir} del ${nearestNode.name} (${province}, ${canton})`;
+
+  const routingEstimate = {
+    min: Math.max(10, minNodeDist),
+    max: Math.round(minNodeDist * 1.25 + 15),
+  };
 
   return {
     lat,
     lng,
     nearestNode,
     nodeDistanceMeters: minNodeDist,
-    nearestCondo: minCondoDist < 1500 ? nearestCondo : null,
-    condoDistanceMeters: minCondoDist < 1500 ? minCondoDist : null,
+    subsequentNodes,
+    nearestCondo: minCondoDist < 1200 ? nearestCondo : null,
+    condoDistanceMeters: minCondoDist < 1200 ? minCondoDist : null,
     feasibility,
     feasibilityLabel,
     badgeColor,
@@ -126,9 +145,12 @@ export function evaluateLocation(
     province,
     canton,
     district,
+    neighborhood,
+    exactStreet,
     colloquialAddress,
     estimatedSpeed,
-    installTime
+    installTime,
+    routingEstimate,
   };
 }
 

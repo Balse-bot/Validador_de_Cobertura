@@ -1,10 +1,12 @@
 import JSZip from 'jszip';
 import { FIBER_NODES, CONDOMINIUMS, FiberNode, Condominium } from '../data/crData';
 
-export async function parseKmlOrKmzFile(file: File): Promise<{ nodes: FiberNode[]; condos: Condominium[] }> {
+export async function parseKmlOrKmzFile(file: File | Blob, fileName: string = 'Octubre Comercial 2026.kmz'): Promise<{ nodes: FiberNode[]; condos: Condominium[] }> {
   let kmlText = '';
 
-  if (file.name.endsWith('.kmz')) {
+  const isKmz = fileName.endsWith('.kmz') || file.type.includes('zip') || file.type.includes('kmz');
+
+  if (isKmz || fileName.endsWith('.kmz')) {
     const zip = new JSZip();
     const unzipped = await zip.loadAsync(file);
     const kmlFile = Object.keys(unzipped.files).find((filename) => filename.endsWith('.kml'));
@@ -12,10 +14,22 @@ export async function parseKmlOrKmzFile(file: File): Promise<{ nodes: FiberNode[
       throw new Error('No se encontró ningún archivo .kml dentro del archivo KMZ.');
     }
     kmlText = await unzipped.files[kmlFile].async('text');
-  } else if (file.name.endsWith('.kml')) {
+  } else if (fileName.endsWith('.kml') || file.type.includes('xml')) {
     kmlText = await file.text();
   } else {
-    throw new Error('Formato no soportado. Suba un archivo .kmz o .kml.');
+    // Default fallback to try zip/kmz
+    try {
+      const zip = new JSZip();
+      const unzipped = await zip.loadAsync(file);
+      const kmlFile = Object.keys(unzipped.files).find((filename) => filename.endsWith('.kml'));
+      if (kmlFile) {
+        kmlText = await unzipped.files[kmlFile].async('text');
+      } else {
+        kmlText = await file.text();
+      }
+    } catch {
+      kmlText = await file.text();
+    }
   }
 
   const parser = new DOMParser();

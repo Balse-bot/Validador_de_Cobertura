@@ -249,7 +249,7 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
   };
 
   return (
-    <div className="relative w-full h-full min-h-[500px] lg:min-h-[700px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
+    <div id="leaflet-map-container" className="relative w-full h-full min-h-[500px] lg:min-h-[700px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
       <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-10" />
 
       <div className="absolute top-4 left-4 z-20 bg-slate-900/80 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex space-x-1">

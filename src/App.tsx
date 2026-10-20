@@ -6,6 +6,7 @@ import { NodesModal } from './components/NodesModal';
 import { ReportModal } from './components/ReportModal';
 import { evaluateLocation, EvaluationResult } from './utils/fiberEngine';
 import { PRESET_LOCATIONS, FIBER_NODES, CONDOMINIUMS, FiberNode, Condominium } from './data/crData';
+import { parseKmlOrKmzFile } from './utils/kmzParser';
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(true);
@@ -33,6 +34,54 @@ export default function App() {
     }
   }, [darkMode]);
 
+  // Background caching & single-load KML/KMZ initialization
+  useEffect(() => {
+    const cachedNodes = localStorage.getItem('cache_fiber_nodes');
+    const cachedCondos = localStorage.getItem('cache_fiber_condos');
+    const cachedFileName = localStorage.getItem('cache_fiber_filename');
+
+    if (cachedNodes && cachedCondos) {
+      try {
+        const parsedN = JSON.parse(cachedNodes);
+        const parsedC = JSON.parse(cachedCondos);
+        if (parsedN.length > 0) {
+          setNodes(parsedN);
+          setCondos(parsedC);
+          if (cachedFileName) setLoadedFileName(cachedFileName);
+          const result = evaluateLocation(currentCoords.lat, currentCoords.lng, parsedN, parsedC);
+          setEvaluation(result);
+        }
+      } catch (e) {
+        console.error("Error reading cached data", e);
+      }
+    }
+
+    async function backgroundFetchKmz() {
+      try {
+        const res = await fetch('/Octubre Comercial 2026.kmz');
+        if (res.ok) {
+          const blob = await res.blob();
+          const result = await parseKmlOrKmzFile(blob, 'Octubre Comercial 2026.kmz');
+          if (result.nodes.length > 0) {
+            setNodes(result.nodes);
+            setCondos(result.condos);
+            setLoadedFileName('Octubre Comercial 2026.kmz');
+            localStorage.setItem('cache_fiber_nodes', JSON.stringify(result.nodes));
+            localStorage.setItem('cache_fiber_condos', JSON.stringify(result.condos));
+            localStorage.setItem('cache_fiber_filename', 'Octubre Comercial 2026.kmz');
+
+            const resultEval = evaluateLocation(currentCoords.lat, currentCoords.lng, result.nodes, result.condos);
+            setEvaluation(resultEval);
+          }
+        }
+      } catch (err) {
+        console.log("Background KMZ load info:", err);
+      }
+    }
+
+    backgroundFetchKmz();
+  }, []);
+
   const handleUpdateCoords = (lat: number, lng: number) => {
     setCurrentCoords({ lat, lng });
     const result = evaluateLocation(lat, lng, nodes, condos);
@@ -43,6 +92,9 @@ export default function App() {
     setNodes(newNodes);
     setCondos(newCondos);
     setLoadedFileName(fileName);
+    localStorage.setItem('cache_fiber_nodes', JSON.stringify(newNodes));
+    localStorage.setItem('cache_fiber_condos', JSON.stringify(newCondos));
+    localStorage.setItem('cache_fiber_filename', fileName);
     const result = evaluateLocation(currentCoords.lat, currentCoords.lng, newNodes, newCondos);
     setEvaluation(result);
   };
