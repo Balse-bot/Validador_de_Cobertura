@@ -9,9 +9,10 @@ interface MapViewProps {
   onSelectCoordinates: (lat: number, lng: number) => void;
   nodes: FiberNode[];
   condos: Condominium[];
+  showNodes: boolean;
 }
 
-export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinates, nodes, condos }) => {
+export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinates, nodes, condos, showNodes }) => {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
@@ -72,75 +73,79 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
 
     map.setView([evaluation.lat, evaluation.lng], map.getZoom(), { animate: true });
 
-    nodes.forEach((node) => {
-      const isNearest = node.id === evaluation.nearestNode.id;
-      const nodeIcon = L.divIcon({
-        className: 'custom-node-icon',
-        html: `
-          <div style="
-            background-color: ${isNearest ? '#3b82f6' : '#10b981'};
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            border: 2px solid white;
-            font-size: 14px;
-            font-weight: bold;
-          ">⚡</div>
-        `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+    // Render nodes and condos only if showNodes is true
+    if (showNodes) {
+      nodes.forEach((node) => {
+        const isNearest = node.id === evaluation.nearestNode.id;
+        const nodeIcon = L.divIcon({
+          className: 'custom-node-icon',
+          html: `
+            <div style="
+              background-color: ${isNearest ? '#3b82f6' : '#10b981'};
+              color: white;
+              width: 28px;
+              height: 28px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+              border: 2px solid white;
+              font-size: 12px;
+              font-weight: bold;
+            ">⚡</div>
+          `,
+          iconSize: [28, 28],
+          iconAnchor: [14, 14],
+        });
+
+        const marker = L.marker([node.lat, node.lng], { icon: nodeIcon });
+        marker.bindPopup(`
+          <div style="font-family: sans-serif; font-size: 13px; color: #0f172a;">
+            <b style="color: #2563eb;">${node.name}</b><br/>
+            <b>Provincia:</b> ${node.province} (${node.canton})<br/>
+            <b>Capacidad:</b> ${node.capacityGbps} Gbps<br/>
+            <b>Estado:</b> <span style="color: #10b981;">${node.status}</span>
+          </div>
+        `);
+        markersLayerRef.current?.addLayer(marker);
       });
 
-      const marker = L.marker([node.lat, node.lng], { icon: nodeIcon });
-      marker.bindPopup(`
-        <div style="font-family: sans-serif; font-size: 13px; color: #0f172a;">
-          <b style="color: #2563eb;">${node.name}</b><br/>
-          <b>Provincia:</b> ${node.province} (${node.canton})<br/>
-          <b>Capacidad:</b> ${node.capacityGbps} Gbps<br/>
-          <b>Estado:</b> <span style="color: #10b981;">${node.status}</span>
-        </div>
-      `);
-      markersLayerRef.current?.addLayer(marker);
-    });
+      condos.forEach((condo) => {
+        const condoIcon = L.divIcon({
+          className: 'custom-condo-icon',
+          html: `
+            <div style="
+              background-color: #8b5cf6;
+              color: white;
+              width: 24px;
+              height: 24px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+              border: 2px solid white;
+              font-size: 11px;
+            ">🏢</div>
+          `,
+          iconSize: [24, 24],
+          iconAnchor: [12, 12],
+        });
 
-    condos.forEach((condo) => {
-      const condoIcon = L.divIcon({
-        className: 'custom-condo-icon',
-        html: `
-          <div style="
-            background-color: #8b5cf6;
-            color: white;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 3px 8px rgba(0,0,0,0.3);
-            border: 2px solid white;
-            font-size: 12px;
-          ">🏢</div>
-        `,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        const marker = L.marker([condo.lat, condo.lng], { icon: condoIcon });
+        marker.bindPopup(`
+          <div style="font-family: sans-serif; font-size: 13px; color: #0f172a;">
+            <b style="color: #7c3aed;">${condo.name}</b><br/>
+            <b>Provincia:</b> ${condo.province} (${condo.canton})<br/>
+            <b>Puerto FTTH:</b> ${condo.hasDirectPort ? 'Disponible' : 'En expansión'}
+          </div>
+        `);
+        markersLayerRef.current?.addLayer(marker);
       });
+    }
 
-      const marker = L.marker([condo.lat, condo.lng], { icon: condoIcon });
-      marker.bindPopup(`
-        <div style="font-family: sans-serif; font-size: 13px; color: #0f172a;">
-          <b style="color: #7c3aed;">${condo.name}</b><br/>
-          <b>Provincia:</b> ${condo.province} (${condo.canton})<br/>
-          <b>Puerto FTTH:</b> ${condo.hasDirectPort ? 'Disponible' : 'En expansión'}
-        </div>
-      `);
-      markersLayerRef.current?.addLayer(marker);
-    });
-
+    // Always ensure evaluated point and nearest node are clearly visible
     const evaluatedIcon = L.divIcon({
       className: 'custom-evaluated-icon',
       html: `
@@ -185,6 +190,34 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
     `);
     markersLayerRef.current.addLayer(evaluatedMarker);
 
+    // If nodes are hidden, at least show the nearest node marker so user sees the connection target
+    if (!showNodes && evaluation.nearestNode) {
+      const nearestNodeIcon = L.divIcon({
+        className: 'custom-nearest-node-icon',
+        html: `
+          <div style="
+            background-color: #3b82f6;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            border: 2px solid white;
+            font-size: 15px;
+            font-weight: bold;
+          ">⚡</div>
+        `,
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+      });
+      const nearestMarker = L.marker([evaluation.nearestNode.lat, evaluation.nearestNode.lng], { icon: nearestNodeIcon });
+      nearestMarker.bindPopup(`<b>${evaluation.nearestNode.name}</b> (Nodo más cercano)`);
+      markersLayerRef.current.addLayer(nearestMarker);
+    }
+
     const polyline = L.polyline(
       [
         [evaluation.lat, evaluation.lng],
@@ -226,7 +259,7 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
 
     polylineLayerRef.current.addLayer(polyline);
     polylineLayerRef.current.addLayer(distanceMarker);
-  }, [evaluation, nodes, condos]);
+  }, [evaluation, nodes, condos, showNodes]);
 
   const toggleMapType = (type: 'satellite' | 'streets') => {
     const map = mapRef.current;
@@ -252,10 +285,10 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
     <div id="leaflet-map-container" className="relative w-full h-full min-h-[500px] lg:min-h-[700px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
       <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-10" />
 
-      <div className="absolute top-4 left-4 z-20 bg-slate-900/80 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex space-x-1">
+      <div className="absolute top-4 left-4 z-20 bg-slate-900/85 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex flex-wrap gap-1.5">
         <button
           onClick={() => toggleMapType('satellite')}
-          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
+          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition ${
             mapType === 'satellite'
               ? 'bg-blue-600 text-white shadow-md'
               : 'text-slate-300 hover:bg-slate-800'
@@ -266,7 +299,7 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
         </button>
         <button
           onClick={() => toggleMapType('streets')}
-          className={`flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
+          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition ${
             mapType === 'streets'
               ? 'bg-blue-600 text-white shadow-md'
               : 'text-slate-300 hover:bg-slate-800'

@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Validador de Cobertura de Fibra Óptica | Costa Rica (GAM)</title>
-  <meta name="description" content="Validador profesional de cobertura FTTH para Costa Rica con carga automática de KMZ desde repositorio, búsqueda inteligente, desglose preciso y certificado html2canvas." />
-  
+  <meta name="description" content="Validador profesional de cobertura FTTH para Costa Rica con carga en segundo plano de KMZ, búsqueda inteligente, motor geodésico y certificado oficial." />
+
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -14,7 +14,17 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              400: '#60a5fa',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
           }
         }
       }
@@ -24,60 +34,92 @@
   <!-- Leaflet CSS & JS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <!-- JSZip for KMZ parsing -->
+  <!-- JSZip for KMZ extraction -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <!-- html2canvas for map certificate snapshot -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     body { font-family: 'Inter', sans-serif; }
+
     @keyframes pulse-ring {
       0% { transform: scale(0.95); opacity: 0.8; }
-      50% { transform: scale(1.4); opacity: 0.3; }
+      50% { transform: scale(1.4); opacity: 0.25; }
       100% { transform: scale(0.95); opacity: 0.8; }
     }
     .pulsing-pin { animation: pulse-ring 2s infinite ease-in-out; }
+
+    /* Custom Leaflet popup styling */
+    .leaflet-popup-content-wrapper {
+      background: #0f172a !important;
+      color: #f8fafc !important;
+      border-radius: 16px !important;
+      border: 1px solid #334155 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+      padding: 4px !important;
+    }
+    .leaflet-popup-tip {
+      background: #0f172a !important;
+      border: 1px solid #334155 !important;
+    }
+
+    /* Print styles */
+    @media print {
+      body * { visibility: hidden; }
+      #printable-certificate, #printable-certificate * { visibility: visible; }
+      #printable-certificate {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        background: white !important;
+        color: black !important;
+      }
+      .no-print { display: none !important; }
+    }
   </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-100 flex flex-col antialiased selection:bg-blue-500 selection:text-white">
 
   <!-- Top Navigation Bar -->
-  <header class="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-50 shadow-sm">
+  <header class="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-50 shadow-sm no-print">
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-blue-500/25">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 shrink-0">
           <svg class="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.858 15.355-5.858 21.213 0"></path></svg>
         </div>
         <div>
           <div class="flex items-center space-x-2">
-            <h1 class="text-base font-bold text-white tracking-tight">FibraCR <span class="text-blue-400 font-semibold">Validador Pro</span></h1>
-            <span id="datasource-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-              KMZ GitHub 🇨🇷
+            <h1 class="text-sm sm:text-base font-bold text-white tracking-tight">FibraCR <span class="text-blue-400 font-semibold">Validador Pro</span></h1>
+            <span id="datasource-badge" class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30 whitespace-nowrap">
+              Cargando red...
             </span>
           </div>
-          <p class="text-[11px] text-slate-400 hidden sm:block">San José • Heredia • Cartago • Alajuela</p>
+          <p class="text-[11px] text-slate-400 hidden sm:block">San José • Heredia • Cartago • Alajuela (GAM)</p>
         </div>
       </div>
-      <div class="flex items-center space-x-3">
-        <button onclick="openNodesModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 transition border border-slate-700/80 shadow-sm">
+      
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <button onclick="openNodesModal()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 transition border border-slate-700 shadow-sm">
           <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
-          <span id="nodos-count-btn">Inventario Nodos</span>
+          <span id="nodos-count-btn">Inventario (<span id="nodes-count-number">0</span>)</span>
         </button>
-        <button onclick="openCertificateModal()" class="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 transition border border-slate-700/80 shadow-sm">
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+
+        <button onclick="openCertificateModal()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition border border-blue-500/50 shadow-md">
+          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
           <span class="hidden sm:inline">Certificado Oficial</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Layout -->
-  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
+  <!-- Main Split-Screen Layout -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 no-print">
     
-    <!-- Left Control Panel -->
-    <div class="w-full lg:w-[440px] shrink-0 flex flex-col space-y-6 z-20">
-      <div class="bg-slate-900/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-6">
+    <!-- Left Control & Evaluation Panel -->
+    <div class="w-full lg:w-[460px] shrink-0 flex flex-col space-y-6 z-20">
+      <div class="bg-slate-900/85 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-5">
         
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-semibold tracking-tight text-white flex items-center space-x-2">
@@ -85,161 +127,234 @@
             <span>Búsqueda Inteligente & Control</span>
           </h2>
           <button onclick="useCurrentGPS()" class="inline-flex items-center space-x-1 px-3 py-1.5 rounded-full text-xs font-medium text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 transition border border-blue-500/20 shadow-sm">
-            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>Mi GPS</span>
+          </button>
+        </div>
+
+        <!-- THE SINGLE PROMINENT NODES VISIBILITY TOGGLE (DEFAULT: OFF) -->
+        <div class="bg-gradient-to-r from-slate-800/90 to-slate-900/90 p-4 rounded-2xl border border-blue-500/30 shadow-lg flex items-center justify-between">
+          <div class="flex items-center space-x-3 text-xs text-slate-200">
+            <div id="toggle-icon-box" class="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
+              <svg id="toggle-icon-svg" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>
+            </div>
+            <div>
+              <span class="font-bold text-sm text-white block">Visualización de Nodos en Mapa</span>
+              <span id="toggle-status-desc" class="text-[11px] text-amber-300 block mt-0.5 font-medium">
+                🔴 APAGADA (Recomendado: Búsqueda fluida sin lag)
+              </span>
+            </div>
+          </div>
+          <button 
+            id="btn-panel-toggle-nodes"
+            onclick="toggleNodesVisibility()" 
+            class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600"
+          >
+            OFF (Oculto)
           </button>
         </div>
 
         <!-- Unified Smart Search Bar -->
         <div class="space-y-1.5">
           <label class="text-[11px] font-medium text-slate-400 flex items-center space-x-1">
-            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            <span>Pegar Coordenadas o Link de Waze / Google Maps</span>
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+            <span>Buscador Inteligente (Coordenadas o Link Waze / Maps)</span>
           </label>
           <div class="relative">
             <input 
               type="text" 
               id="smart-search-input" 
               oninput="handleSmartSearch(this.value)"
-              placeholder="Ej: 9.924372, -84.090117 o pega tu link..." 
-              class="w-full px-4 py-3 rounded-2xl border border-slate-700 bg-slate-800/90 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner pr-10"
+              placeholder="Ej: 9.924372, -84.090117 o link de Maps/Waze..." 
+              class="w-full px-4 py-3 rounded-2xl border border-slate-700 bg-slate-800/90 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner pr-10 font-mono"
             />
-            <div class="absolute right-3 top-3 text-slate-400 pointer-events-none">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <div class="absolute right-3.5 top-3 text-slate-400 pointer-events-none">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </div>
           </div>
           <p id="search-error" class="text-[10px] text-rose-400 hidden"></p>
         </div>
 
-        <!-- Recent History Section -->
-        <div class="space-y-2 pt-1 border-t border-slate-800">
+        <!-- Presets Selector GAM -->
+        <div>
+          <label class="block text-[11px] font-medium text-slate-400 mb-1">
+            Zonas Principales GAM (Costa Rica)
+          </label>
+          <select 
+            id="preset-selector" 
+            onchange="handlePresetSelect(this.value)"
+            class="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none transition"
+          >
+            <option value="">Seleccione una zona rápida...</option>
+            <option value="9.9380,-84.1120">Parque Metropolitano La Sabana, San José</option>
+            <option value="9.9310,-84.0620">Barrio Los Yoses / San Pedro, Montes de Oca</option>
+            <option value="9.9402,-84.1445">Multiplaza Escazú / Guachipelín, Escazú</option>
+            <option value="10.0010,-84.1130">Parque Central de Heredia, Heredia</option>
+            <option value="10.0180,-84.2140">Parque Central de Alajuela, Alajuela</option>
+            <option value="9.8660,-83.9160">Ruinas de Cartago / Centro, Cartago</option>
+            <option value="9.9320,-84.1850">Santa Ana Centro / Pozos, Santa Ana</option>
+            <option value="9.9234,-84.0321">Curridabat Centro / Cipreses, Curridabat</option>
+          </select>
+        </div>
+
+        <!-- Recent Search History -->
+        <div class="space-y-2 pt-2 border-t border-slate-800">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
               <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              <span>Historial Reciente (LocalStorage)</span>
+              <span>Historial Reciente</span>
             </span>
-            <button onclick="clearHistory()" class="text-[10px] text-slate-500 hover:text-rose-400 transition">Borrar</button>
+            <button onclick="clearHistory()" class="text-[10px] text-slate-500 hover:text-rose-400 transition font-medium">Borrar</button>
           </div>
-          <div id="history-list" class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+          <div id="history-list" class="space-y-1.5 max-h-28 overflow-y-auto pr-1">
             <div class="text-[11px] text-slate-500 italic py-1">No hay búsquedas recientes.</div>
           </div>
         </div>
 
       </div>
 
-      <!-- Results Card with Precise Geographic Breakdown -->
-      <div class="bg-slate-900/80 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-4">
+      <!-- Feasibility & Geographic Results Card -->
+      <div class="bg-slate-900/85 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-4">
+        
         <div class="flex items-center justify-between">
           <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
             <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-            <span>Resultado de Factibilidad</span>
+            <span>Diagnóstico de Cobertura FTTH</span>
           </h3>
-          <button onclick="openNodesModal()" class="text-[11px] text-blue-400 font-semibold hover:underline flex items-center space-x-1">
-            <span>Ver Nodos GAM</span>
-          </button>
+          <span id="eval-mode-badge" class="text-[10px] font-mono bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded-md border border-blue-500/20">
+            GAM
+          </span>
         </div>
 
-        <div id="status-card" class="p-4 rounded-2xl border bg-emerald-500/10 border-emerald-500/20 flex items-start space-x-3 transition-all duration-300">
+        <!-- Feasibility Status Banner -->
+        <div id="status-card" class="p-4 rounded-2xl border bg-emerald-500/10 border-emerald-500/20 flex items-start space-x-3 transition-all duration-300 shadow-inner">
           <div id="status-icon" class="mt-0.5 shrink-0">
             <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
           </div>
           <div>
             <div id="status-title" class="text-xs font-black tracking-tight text-emerald-400">
-              FACTIBLE (Conexión Directa FTTH)
+              🟢 CON COBERTURA (Red al frente / Huella FTTH Activa)
             </div>
-            <p id="status-desc" class="text-[11px] text-slate-300 mt-1">
-              La ubicación se encuentra dentro del rango óptimo de 0 a 20 metros del nodo de fibra óptica.
+            <p id="status-desc" class="text-[11px] text-slate-300 mt-1 leading-relaxed">
+              El punto evaluado se encuentra dentro del rango de cobertura directa del nodo.
             </p>
           </div>
         </div>
 
+        <!-- Operational Alert for Private Condos / Gated Communities -->
+        <div id="condo-alert-box" class="p-3 rounded-2xl border bg-amber-500/15 border-amber-500/30 text-amber-300 text-xs hidden flex items-start space-x-2">
+          <svg class="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          <span id="condo-alert-text" class="leading-relaxed"></span>
+        </div>
+
+        <!-- Metrics Grid (Nearest Node & Overhead Routing Estimate) -->
         <div class="grid grid-cols-2 gap-2 text-xs">
-          <div class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/60">
-            <span class="text-[10px] text-slate-400 block">Nodo más cercano</span>
-            <span id="res-node-dist" class="font-bold text-white block">12 metros</span>
-            <span id="res-node-name" class="text-[10px] text-blue-400 block truncate mt-0.5">Nodo KMZ</span>
+          <div class="bg-slate-800/50 p-3.5 rounded-2xl border border-slate-700/60">
+            <span class="text-[10px] text-slate-400 block font-medium">Nodo más cercano</span>
+            <span id="res-node-dist" class="font-bold text-white block mt-0.5 text-sm">12 metros</span>
+            <span id="res-node-name" class="text-[10px] text-blue-400 block truncate mt-0.5 font-mono">Nodo Sabana</span>
           </div>
 
-          <div class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/60">
-            <span class="text-[10px] text-slate-400 block">Condominio cercano</span>
-            <span id="res-condo-name" class="font-bold text-white truncate block">Zona Abierta</span>
-            <span id="res-condo-dist" class="text-[10px] text-purple-400 block truncate mt-0.5">N/A</span>
+          <div class="bg-slate-800/50 p-3.5 rounded-2xl border border-slate-700/60">
+            <span class="text-[10px] text-slate-400 block font-medium">Recorrido Estimado</span>
+            <span id="res-routing-estimate" class="font-bold text-white block mt-0.5 text-sm">14m - 28m</span>
+            <span class="text-[10px] text-cyan-400 block truncate mt-0.5">Tendido aéreo estimado</span>
           </div>
         </div>
 
-        <!-- Precise Geographic Breakdown (Provincia, Cantón, Distrito, Barrio) -->
-        <div class="bg-slate-800/40 p-3.5 rounded-2xl border border-slate-700/60 space-y-2 text-xs">
-          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Desglose Geográfico Preciso (CR)</div>
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <span class="text-slate-400 block text-[10px]">Provincia:</span>
-              <span id="res-provincia" class="font-semibold text-white">San José</span>
-            </div>
-            <div>
-              <span class="text-slate-400 block text-[10px]">Cantón:</span>
-              <span id="res-canton" class="font-semibold text-white">San José</span>
-            </div>
-            <div>
-              <span class="text-slate-400 block text-[10px]">Distrito:</span>
-              <span id="res-distrito" class="font-semibold text-white">Carmen</span>
-            </div>
-            <div>
-              <span class="text-slate-400 block text-[10px]">Barrio / Sector:</span>
-              <span id="res-barrio" class="font-semibold text-cyan-400">Centro</span>
-            </div>
+        <!-- Territorial & Residential Breakdown -->
+        <div class="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/60 space-y-2 text-xs">
+          <div class="flex items-center justify-between border-b border-slate-700/60 pb-1.5">
+            <span class="text-slate-400 flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+              <span>Ubicación Exacta:</span>
+            </span>
+            <span id="res-prov-canton" class="font-semibold text-white">San José, San José</span>
           </div>
-          <div class="pt-2 border-t border-slate-700 flex justify-between">
-            <span class="text-slate-400">Velocidad Máxima:</span>
-            <span id="res-speed" class="font-semibold text-emerald-400">Simétrico hasta 1000 Mbps</span>
+          
+          <div class="flex justify-between text-[11px]">
+            <span class="text-slate-400">Distrito / Barrio:</span>
+            <span id="res-dist-barrio" class="font-medium text-slate-200">Mata Redonda, Sabana Norte</span>
           </div>
-          <div class="pt-1">
-            <span class="text-slate-400 block mb-0.5">Dirección Coloquial:</span>
-            <p id="res-colloquial" class="font-medium text-slate-200 italic text-[11px]">"Aprox. 12m del nodo de red..."</p>
+          
+          <div class="flex justify-between text-[11px]">
+            <span class="text-slate-400">Vía exacta:</span>
+            <span id="res-exact-street" class="font-medium text-slate-200">Calle 42, Avenida Las Américas</span>
+          </div>
+
+          <div id="res-condo-row" class="pt-2 border-t border-slate-700/60 flex items-center justify-between text-[11px]">
+            <span class="text-purple-300 flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+              <span>🏘️ Condominio cercano:</span>
+            </span>
+            <span id="res-condo-details" class="font-bold text-purple-200">Torres del Parque (45m)</span>
+          </div>
+
+          <div class="pt-1.5 border-t border-slate-700/60">
+            <span class="text-slate-400 block text-[10px] mb-0.5">Dirección Coloquial Estimada:</span>
+            <p id="res-colloquial" class="font-medium text-slate-200 italic text-[11px]">"Aprox. 12m al norte del Nodo Central Sabana (Sabana Norte, San José)"</p>
+          </div>
+        </div>
+
+        <!-- Subsequent Backup Nodes List -->
+        <div class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/60 space-y-1.5 text-xs">
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block flex items-center space-x-1">
+            <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+            <span>Nodos de Respaldo Cercanos:</span>
+          </span>
+          <div id="subsequent-nodes-list" class="space-y-1 pt-1">
+            <!-- Dynamically populated -->
           </div>
         </div>
 
         <button 
           onclick="openCertificateModal()"
-          class="w-full py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-medium text-xs flex items-center justify-center space-x-2 shadow-lg transition border border-slate-700"
+          class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/25 transition"
         >
-          <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-          <span>Generar Certificado Oficial</span>
+          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+          <span>Generar Certificado Oficial de Factibilidad</span>
         </button>
       </div>
 
     </div>
 
-    <!-- Right Map Panel -->
+    <!-- Right Interactive Map Panel -->
     <div class="flex-1 flex flex-col z-10">
       <div class="mb-3 flex items-center justify-between">
-        <span class="text-xs font-medium text-slate-400">
-          🛰️ Vista Satelital Interactiva (Haz clic en cualquier punto de la red GAM)
+        <span class="text-xs font-medium text-slate-400 flex items-center space-x-1.5">
+          <span>🛰️ Vista Satelital Interactiva (Haz clic en el mapa para evaluar)</span>
         </span>
         <span id="coords-badge" class="text-xs font-mono bg-slate-900/80 border border-slate-800 text-blue-400 px-3 py-1 rounded-full shadow-inner">
-          Lat: 9.9333 • Lng: -84.1085
+          Lat: 9.9380 • Lng: -84.1120
         </span>
       </div>
-      <div class="flex-1 w-full min-h-[500px] lg:min-h-[700px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800 relative">
-        <div id="map" class="w-full h-full absolute inset-0"></div>
+      
+      <div class="flex-1 w-full min-h-[520px] lg:min-h-[720px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800 relative">
+        <div id="map" class="w-full h-full absolute inset-0 z-0"></div>
 
-        <div class="absolute top-4 left-4 z-[400] bg-slate-900/90 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex space-x-1">
+        <!-- Map Layer Controls Toolbar -->
+        <div class="absolute top-4 left-4 z-[400] bg-slate-900/90 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex flex-wrap gap-1.5">
           <button onclick="setMapLayer('satellite')" id="btn-sat" class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition">Satélite</button>
           <button onclick="setMapLayer('streets')" id="btn-str" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition">Calles</button>
         </div>
 
+        <!-- Map Legend -->
         <div class="absolute bottom-4 left-4 z-[400] bg-slate-900/90 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-xl border border-slate-800 text-xs text-slate-300 space-y-2 hidden sm:block">
-          <div class="font-bold text-white mb-1">Leyenda Red KMZ (GAM)</div>
-          <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-blue-500"></div><span>Nodo de Red KMZ</span></div>
-          <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-purple-500"></div><span>Condominio / Edificio</span></div>
-          <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div><span>Punto Evaluado</span></div>
+          <div class="font-bold text-white mb-1">Leyenda de Cobertura GAM</div>
+          <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-blue-500"></div><span>Nodo / Cierre Asignado (⚡)</span></div>
+          <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div><span>Punto Consultado (📍)</span></div>
+          <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-purple-500"></div><span>Condominio Residencial (🏢)</span></div>
+          <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-700/80">
+            <span id="legend-nodes-state">Capa general de nodos: Desactivada</span>
+          </div>
         </div>
       </div>
     </div>
 
   </main>
 
-  <!-- Nodes & Condos Modal -->
-  <div id="nodes-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
+  <!-- Nodes Inventory Modal -->
+  <div id="nodes-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 no-print">
     <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       <div class="p-5 border-b border-slate-800 flex items-center justify-between">
         <div class="flex items-center space-x-3">
@@ -247,112 +362,481 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
           </div>
           <div>
-            <h3 class="text-base font-bold text-white">Inventario KMZ (San José, Heredia, Cartago, Alajuela)</h3>
-            <p class="text-xs text-slate-400">Nodos y puntos extraídos automáticamente del repositorio</p>
+            <h3 class="text-base font-bold text-white">Inventario de Nodos y Cierres FTTH</h3>
+            <p class="text-xs text-slate-400">Puntos de conexión en San José, Heredia, Cartago y Alajuela</p>
           </div>
         </div>
         <button onclick="closeNodesModal()" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
         </button>
       </div>
-      <div class="p-5 overflow-y-auto flex-1 space-y-3" id="nodes-modal-list"></div>
+      <div class="p-4 border-b border-slate-800 bg-slate-900/50">
+        <input 
+          type="text" 
+          id="modal-search-input" 
+          oninput="filterNodesModal(this.value)" 
+          placeholder="Filtrar por nombre, cantón o provincia..." 
+          class="w-full px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none"
+        />
+      </div>
+      <div class="p-5 overflow-y-auto flex-1 space-y-2.5" id="nodes-modal-list"></div>
     </div>
   </div>
 
-  <!-- Official Certificate Modal -->
+  <!-- Official Certificate Modal with html2canvas -->
   <div id="cert-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
-    <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 w-full max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
-      <div class="p-5 border-b border-slate-800 flex items-center justify-between print:hidden">
+    <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 w-full max-w-3xl max-h-[94vh] flex flex-col overflow-hidden">
+      
+      <div class="p-5 border-b border-slate-800 flex items-center justify-between no-print">
         <div class="flex items-center space-x-3">
           <div class="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-400">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
           </div>
           <div>
-            <h3 class="text-base font-bold text-white">Certificado Oficial de Factibilidad</h3>
-            <p class="text-xs text-slate-400">Reporte técnico con captura de ruta satelital</p>
+            <h3 class="text-base font-bold text-white">Certificado Oficial de Factibilidad FTTH</h3>
+            <p class="text-xs text-slate-400">Validación georreferenciada con captura satelital</p>
           </div>
         </div>
         <div class="flex items-center space-x-2">
-          <button onclick="downloadCertificateImage()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition shadow-md">Descargar Imagen</button>
-          <button onclick="window.print()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 transition">Imprimir</button>
+          <button onclick="downloadCertificatePng()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition shadow-md flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <span>Descargar PNG</span>
+          </button>
+          <button onclick="window.print()" class="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 transition flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+            <span>Imprimir</span>
+          </button>
           <button onclick="closeCertificateModal()" class="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
           </button>
         </div>
       </div>
       
-      <div id="printable-certificate" class="p-8 space-y-6 overflow-y-auto flex-1 bg-slate-900 text-white">
-        <div class="border-b border-slate-800 pb-4 flex justify-between items-start">
-          <div>
-            <h2 class="text-xl font-black tracking-tight">FIBRA-CR TELECOM</h2>
-            <p class="text-xs text-slate-400">Certificación Oficial de Cobertura FTTH • Costa Rica</p>
+      <!-- Certificate Printable Body -->
+      <div id="printable-certificate" class="p-8 space-y-6 overflow-y-auto flex-1 bg-slate-900 text-white font-sans">
+        
+        <div class="border-b border-slate-800 pb-5 flex justify-between items-start">
+          <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-2xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shadow-md">
+              🇨🇷
+            </div>
+            <div>
+              <h2 class="text-xl font-black tracking-tight text-white">FIBRA-CR TELECOM</h2>
+              <p class="text-xs text-slate-400">Dirección de Redes FTTH & Infraestructura • Costa Rica</p>
+            </div>
           </div>
           <div class="text-right text-xs text-slate-400">
-            <b>Certificado ID:</b> CR-<span id="cert-id"></span><br>
-            <b>Fecha:</b> <span id="cert-date"></span>
+            <div><b>Certificado ID:</b> <span class="font-mono text-blue-400">CR-<span id="cert-id"></span></span></div>
+            <div><b>Fecha de Emisión:</b> <span id="cert-date"></span></div>
           </div>
         </div>
 
-        <div id="cert-status-banner" class="p-4 rounded-2xl border flex items-center space-x-3">
+        <!-- Certificate Status Banner -->
+        <div id="cert-status-banner" class="p-4 rounded-2xl border flex items-center space-x-3 shadow-inner">
           <div id="cert-status-icon"></div>
           <div>
-            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Estado de Factibilidad</span>
-            <span id="cert-status-text" class="text-sm font-black"></span>
+            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Dictamen Técnico de Cobertura</span>
+            <span id="cert-status-text" class="text-base font-black"></span>
           </div>
+        </div>
+
+        <!-- Condo Alert in Certificate if applicable -->
+        <div id="cert-condo-alert" class="p-3 rounded-2xl border bg-amber-500/10 border-amber-500/30 text-amber-300 text-xs hidden leading-relaxed">
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 space-y-1.5">
-            <b class="text-slate-400 uppercase text-[10px] block">Ubicación Consultada</b>
-            <div><b>Coordenadas:</b> <span id="cert-coords"></span></div>
-            <div><b>Ubicación Precisa:</b> <span id="cert-geo"></span></div>
-            <div><b>Referencia:</b> <span id="cert-colloquial" class="italic"></span></div>
+          <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ubicación Consultada</span>
+            <div><b>Coordenadas:</b> <span id="cert-coords" class="font-mono text-cyan-300"></span></div>
+            <div><b>Provincia / Cantón:</b> <span id="cert-prov-canton"></span></div>
+            <div><b>Distrito / Barrio:</b> <span id="cert-dist-barrio"></span></div>
+            <div><b>Vía exacta:</b> <span id="cert-street"></span></div>
+            <div id="cert-condo-wrapper" class="text-purple-300"><b>🏘️ Condominio:</b> <span id="cert-condo"></span></div>
+            <div><b>Referencia Coloquial:</b> <span id="cert-colloquial" class="italic text-slate-300"></span></div>
           </div>
-          <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700 space-y-1.5">
-            <b class="text-slate-400 uppercase text-[10px] block">Infraestructura Asignada</b>
-            <div><b>Nodo Cercano:</b> <span id="cert-node"></span></div>
-            <div><b>Distancia Lineal:</b> <span id="cert-dist"></span></div>
-            <div><b>Velocidad Máxima:</b> <span id="cert-speed"></span></div>
+
+          <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-2">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Infraestructura Asignada</span>
+            <div><b>Nodo / Cierre Asignado:</b> <span id="cert-node" class="font-bold text-white"></span></div>
+            <div><b>Código de Cierre:</b> <span id="cert-node-code" class="font-mono text-blue-400"></span></div>
+            <div><b>Distancia Lineal al Cierre:</b> <span id="cert-dist" class="font-bold text-white"></span></div>
+            <div><b>Recorrido Estimado (Acometida):</b> <span id="cert-routing"></span></div>
+            <div><b>Tiempo Estimado de Instalación:</b> <span id="cert-time"></span></div>
           </div>
         </div>
 
+        <!-- Dedicated Georeferenced Map View showing Coordinate & Node with high clarity -->
         <div class="space-y-2">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Captura Satelital de Ruta (Haversine)</span>
-          <div id="map-snapshot-container" class="w-full h-48 rounded-2xl overflow-hidden border border-slate-700 bg-slate-950 flex items-center justify-center relative">
-            <span class="text-xs text-slate-500 animate-pulse">Generando captura de mapa...</span>
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <span>🗺️ Mapa Georreferenciado: Coordenada del Cliente y Nodo FTTH Asignado</span>
+            </span>
+            <div class="flex items-center space-x-2 print:hidden">
+              <button type="button" onclick="resetCertMapView()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition flex items-center space-x-1 shadow-sm" title="Centrar en la ruta entre coordenada y nodo">
+                <span>🎯 Centrar Traza</span>
+              </button>
+              <button type="button" id="btn-cert-map-layer" onclick="toggleCertMapLayer()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition flex items-center space-x-1 shadow-sm" title="Cambiar capa satélite / calles">
+                <span>🛰️ Satélite</span>
+              </button>
+            </div>
+          </div>
+          
+          <div class="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-2xl">
+            <!-- Dedicated Leaflet Map Instance -->
+            <div id="cert-map" class="w-full h-full z-0"></div>
+
+            <!-- Sleek On-Map HUD Legend Overlay -->
+            <div class="absolute bottom-3 left-3 z-[400] bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-700/80 shadow-lg text-[10px] space-y-1 max-w-[280px]">
+              <div class="flex items-center gap-1.5 font-bold text-white">
+                <span id="cert-map-legend-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shrink-0 shadow-sm"></span>
+                <span class="truncate">📍 Cliente: <span id="cert-map-legend-coords" class="font-mono text-cyan-300"></span></span>
+              </div>
+              <div class="flex items-center gap-1.5 font-bold text-white">
+                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shrink-0 shadow-sm"></span>
+                <span class="truncate">⚡ Nodo: <span id="cert-map-legend-node" class="text-blue-300"></span></span>
+              </div>
+              <div class="flex items-center gap-1.5 text-slate-300 pt-0.5 border-t border-slate-800">
+                <span class="text-cyan-400">📏</span>
+                <span>Distancia: <b id="cert-map-legend-dist" class="text-white"></b> (<span id="cert-map-legend-routing"></span>)</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="text-[11px] text-slate-400 pt-2 border-t border-slate-800 text-center">
-          🇨🇷 Documento oficial generado por el sistema de validación geoespacial de fibra óptica para la GAM (Costa Rica).
+        <div class="text-[11px] text-slate-400 pt-3 border-t border-slate-800 space-y-1">
+          <p>
+            <b>Nota técnica:</b> Este certificado valida la factibilidad de conexión mediante la fórmula geodésica de Haversine y el inventario georreferenciado de nodos de la Gran Área Metropolitana (GAM). Todo servicio queda sujeto a inspección visual de posteo y disponibilidad de puertos en caja de empalme.
+          </p>
+          <p class="text-center pt-2 font-semibold text-slate-300">
+            🇨🇷 Red Nacional de Fibra Óptica FTTH • Costa Rica
+          </p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Application Logic -->
+  <!-- Main Application Script -->
   <script>
+    // Global Datastores
     let fiberNodes = [
       { id: "NODE-SJO-01", name: "Nodo Central Sabana", province: "San José", canton: "San José", district: "Pavas", lat: 9.9380, lng: -84.1120, capacityGbps: 100, status: "Activo", code: "SJO-SAB-01" },
       { id: "NODE-SJO-02", name: "Nodo Los Yoses FO", province: "San José", canton: "San José", district: "Catedral", lat: 9.9310, lng: -84.0620, capacityGbps: 80, status: "Activo", code: "SJO-YOS-02" },
+      { id: "NODE-SJO-03", name: "Nodo Escazú Multiplaza", province: "San José", canton: "Escazú", district: "San Rafael", lat: 9.9402, lng: -84.1445, capacityGbps: 100, status: "Activo", code: "SJO-ESC-03" },
       { id: "NODE-HER-01", name: "Nodo Heredia Centro", province: "Heredia", canton: "Heredia", district: "Heredia", lat: 10.0010, lng: -84.1130, capacityGbps: 100, status: "Activo", code: "HER-CTR-01" },
+      { id: "NODE-HER-02", name: "Nodo San Francisco Heredia", province: "Heredia", canton: "Heredia", district: "San Francisco", lat: 9.9912, lng: -84.1350, capacityGbps: 100, status: "Activo", code: "HER-SFR-02" },
       { id: "NODE-ALA-01", name: "Nodo Alajuela Parque Central", province: "Alajuela", canton: "Alajuela", district: "Alajuela", lat: 10.0180, lng: -84.2140, capacityGbps: 90, status: "Activo", code: "ALA-CTR-01" },
-      { id: "NODE-CAR-01", name: "Nodo Cartago Ruinas", province: "Cartago", canton: "Cartago", district: "Oriental", lat: 9.8660, lng: -83.9160, capacityGbps: 100, status: "Activo", code: "CAR-RUI-01" }
+      { id: "NODE-CAR-01", name: "Nodo Cartago Ruinas", province: "Cartago", canton: "Cartago", district: "Oriental", lat: 9.8660, lng: -83.9160, capacityGbps: 100, status: "Activo", code: "CAR-RUI-01" },
+      { id: "NODE-SNA-01", name: "Nodo Santa Ana Pozos", province: "San José", canton: "Santa Ana", district: "Pozos", lat: 9.9320, lng: -84.1850, capacityGbps: 100, status: "Activo", code: "SJO-SNA-01" },
+      { id: "NODE-CUR-01", name: "Nodo Curridabat Cipreses", province: "San José", canton: "Curridabat", district: "Curridabat", lat: 9.9234, lng: -84.0321, capacityGbps: 90, status: "Activo", code: "SJO-CUR-01" }
     ];
-    let condominiums = [];
 
-    let currentLat = 9.9333;
-    let currentLng = -84.1085;
-    let map, satelliteLayer, streetsLayer, currentBaseLayer;
-    let markersGroup, polylineGroup;
+    let condominiums = [
+      { id: "CONDO-01", name: "Condominio Torres del Parque", province: "San José", canton: "San José", lat: 9.9385, lng: -84.1115 },
+      { id: "CONDO-02", name: "Residencial Las Flores", province: "Heredia", canton: "Heredia", lat: 10.0020, lng: -84.1125 },
+      { id: "CONDO-03", name: "Condominio Distrito Cuatro", province: "San José", canton: "Escazú", lat: 9.9410, lng: -84.1430 }
+    ];
+
+    // State Variables
+    let currentLat = 9.9380;
+    let currentLng = -84.1120;
+    let showNodes = false; // CRITICAL REQUIREMENT: Default OFF for performance
     let lastEvaluation = null;
 
-    async function initMap() {
-      map = L.map('map', { zoomControl: false }).setView([currentLat, currentLng], 14);
+    // Leaflet Variables
+    let map = null;
+    let satelliteLayer = null;
+    let streetsLayer = null;
+    let currentBaseLayer = null;
+    let markersLayer = null;
+    let connectionsLayer = null;
+
+    // Dedicated Certificate Map Variables
+    let certMap = null;
+    let certSatelliteLayer = null;
+    let certStreetsLayer = null;
+    let certLayersGroup = null;
+    let certMapType = 'satellite';
+
+    // IndexedDB Setup for fast persistence of thousands of points
+    const DB_NAME = 'FibraCR_DB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'network_cache';
+
+    function openIndexedDB() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) {
+          resolve(null);
+          return;
+        }
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        request.onerror = () => resolve(null);
+        request.onsuccess = () => resolve(request.result);
+        request.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        };
+      });
+    }
+
+    async function saveToIndexedDB(nodes, condos, fileName) {
+      try {
+        const db = await openIndexedDB();
+        if (!db) return;
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        store.put(nodes, 'nodes');
+        store.put(condos, 'condos');
+        store.put(fileName, 'fileName');
+      } catch (err) {
+        console.warn('Error saving to IndexedDB:', err);
+      }
+    }
+
+    async function loadFromIndexedDB() {
+      try {
+        const db = await openIndexedDB();
+        if (!db) return null;
+        return new Promise((resolve) => {
+          const tx = db.transaction(STORE_NAME, 'readonly');
+          const store = tx.objectStore(STORE_NAME);
+          const reqNodes = store.get('nodes');
+          const reqCondos = store.get('condos');
+          const reqFileName = store.get('fileName');
+          tx.oncomplete = () => {
+            if (reqNodes.result && reqNodes.result.length > 0) {
+              resolve({
+                nodes: reqNodes.result,
+                condos: reqCondos.result || [],
+                fileName: reqFileName.result || 'Caché Local'
+              });
+            } else {
+              resolve(null);
+            }
+          };
+          tx.onerror = () => resolve(null);
+        });
+      } catch {
+        return null;
+      }
+    }
+
+    // Mathematical Geodesic Distance Formula (Haversine)
+    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Earth radius in meters
+      const dLat = ((lat2 - lat1) * Math.PI) / 180;
+      const dLon = ((lon2 - lon1) * Math.PI) / 180;
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos((lat1 * Math.PI) / 180) *
+          Math.cos((lat2 * Math.PI) / 180) *
+          Math.sin(dLon / 2) *
+          Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return Math.round(R * c);
+    }
+
+    // Comprehensive KML/KMZ Parser Traversing all placemarks, folders, points, lines, polygons
+    function parseKmlDocument(kmlText, sourceName) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(kmlText, 'text/xml');
+      const placemarks = xmlDoc.getElementsByTagName('Placemark');
+      
+      const parsedNodes = [];
+      const parsedCondos = [];
+
+      for (let i = 0; i < placemarks.length; i++) {
+        const pm = placemarks[i];
+        const nameEl = pm.getElementsByTagName('name')[0];
+        const name = nameEl ? nameEl.textContent.trim() : `Nodo ${i + 1}`;
+        
+        // Search for all coordinates elements within Points, LineStrings, Polygons
+        const coordElements = pm.getElementsByTagName('coordinates');
+        for (let c = 0; c < coordElements.length; c++) {
+          const coordText = coordElements[c].textContent.trim();
+          if (!coordText) continue;
+
+          const tuples = coordText.split(/\s+/);
+          for (let t = 0; t < tuples.length; t++) {
+            const parts = tuples[t].split(',');
+            if (parts.length >= 2) {
+              const lng = parseFloat(parts[0]);
+              const lat = parseFloat(parts[1]);
+
+              if (!isNaN(lat) && !isNaN(lng)) {
+                // Costa Rica bounding box
+                if (lat >= 8.0 && lat <= 11.5 && lng >= -86.0 && lng <= -82.0) {
+                  const province = lat > 10.35 ? "Guanacaste" :
+                                   lat > 9.97 && lng < -84.18 ? "Alajuela" :
+                                   lat > 9.96 && lng >= -84.18 ? "Heredia" :
+                                   lng < -83.7 ? "Cartago" :
+                                   lat < 9.7 ? "Puntarenas" : "San José";
+
+                  const lowerName = name.toLowerCase();
+                  const isCondo = lowerName.includes('condo') || lowerName.includes('residencial') || lowerName.includes('torre') || lowerName.includes('urbaniza');
+
+                  if (isCondo) {
+                    parsedCondos.push({
+                      id: `KMZ-C-${i}-${t}`,
+                      name: tuples.length > 1 ? `${name} (Pto ${t+1})` : name,
+                      province,
+                      canton: province,
+                      lat,
+                      lng
+                    });
+                  } else {
+                    parsedNodes.push({
+                      id: `KMZ-N-${i}-${t}`,
+                      name: tuples.length > 1 ? `${name} [${t+1}]` : name,
+                      province,
+                      canton: province,
+                      district: "Central",
+                      lat,
+                      lng,
+                      capacityGbps: 100,
+                      status: "Activo",
+                      code: `NET-${i+1}`
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+
+      if (parsedNodes.length > 0) {
+        fiberNodes = parsedNodes;
+      }
+      if (parsedCondos.length > 0) {
+        condominiums = parsedCondos;
+      }
+
+      updateNodesCounterUI(sourceName);
+      saveToIndexedDB(fiberNodes, condominiums, sourceName);
+    }
+
+    async function loadBackgroundKmz() {
+      // Step 1: Check IndexedDB
+      const cached = await loadFromIndexedDB();
+      if (cached && cached.nodes.length > 0) {
+        fiberNodes = cached.nodes;
+        if (cached.condos.length > 0) condominiums = cached.condos;
+        updateNodesCounterUI(cached.fileName || 'IndexedDB');
+        evaluateCoordinates(currentLat, currentLng, 'Punto Inicial (Caché)');
+      }
+
+      // Step 2: Background fetch to ensure fresh repository KMZ
+      const candidates = ['./Octubre Comercial 2026.kmz', '/Octubre Comercial 2026.kmz', 'Octubre Comercial 2026.kmz', './nodos.kmz', './red.kml'];
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const blob = await res.blob();
+            if (url.endsWith('.kml')) {
+              const text = await blob.text();
+              parseKmlDocument(text, url);
+            } else {
+              const zip = new JSZip();
+              const unzipped = await zip.loadAsync(blob);
+              const kmlFilename = Object.keys(unzipped.files).find(f => f.endsWith('.kml'));
+              if (kmlFilename) {
+                const text = await unzipped.files[kmlFilename].async('text');
+                parseKmlDocument(text, 'Octubre Comercial 2026.kmz');
+              }
+            }
+            evaluateCoordinates(currentLat, currentLng, 'Punto Inicial');
+            break;
+          }
+        } catch (e) {
+          // Continue to next candidate
+        }
+      }
+
+      updateNodesCounterUI();
+      evaluateCoordinates(currentLat, currentLng, 'Punto Inicial');
+    }
+
+    async function handleCustomFileUpload(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      document.getElementById('loaded-file-label').innerText = `Procesando: ${file.name}...`;
+      try {
+        if (file.name.endsWith('.kmz')) {
+          const zip = new JSZip();
+          const unzipped = await zip.loadAsync(file);
+          const kmlFilename = Object.keys(unzipped.files).find(f => f.endsWith('.kml'));
+          if (!kmlFilename) throw new Error('No se encontró archivo .kml en el KMZ');
+          const text = await unzipped.files[kmlFilename].async('text');
+          parseKmlDocument(text, file.name);
+        } else {
+          const text = await file.text();
+          parseKmlDocument(text, file.name);
+        }
+        evaluateCoordinates(currentLat, currentLng, `Archivo: ${file.name}`);
+        alert(`¡Archivo ${file.name} procesado e indexado con éxito! (${fiberNodes.length} nodos, ${condominiums.length} condominios).`);
+      } catch (err) {
+        alert("Error al cargar el archivo KMZ/KML: " + err.message);
+      }
+    }
+
+    function updateNodesCounterUI(sourceName) {
+      document.getElementById('nodes-count-number').innerText = fiberNodes.length;
+      document.getElementById('datasource-badge').innerText = sourceName ? `Red: ${sourceName} 🇨🇷` : `GAM: ${fiberNodes.length} Nodos 🇨🇷`;
+      document.getElementById('datasource-badge').className = "hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap";
+      const labelEl = document.getElementById('loaded-file-label');
+      if (sourceName && labelEl) {
+        labelEl.innerText = `Red: ${sourceName}`;
+      }
+    }
+
+    // Toggle Nodes Visibility Function (Syncs Header, Panel & Map)
+    function toggleNodesVisibility() {
+      showNodes = !showNodes;
+      updateNodesToggleUI();
+      renderMapLayers();
+    }
+
+    function updateNodesToggleUI() {
+      const panelBtn = document.getElementById('btn-panel-toggle-nodes');
+      const panelDesc = document.getElementById('toggle-status-desc');
+      const iconBox = document.getElementById('toggle-icon-box');
+      const legendState = document.getElementById('legend-nodes-state');
+
+      if (!panelBtn) return;
+
+      if (showNodes) {
+        // ON STATE
+        panelBtn.innerText = "ON (Visible)";
+        panelBtn.className = "px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-400/50";
+        if (panelDesc) {
+          panelDesc.innerText = "🟢 ACTIVA (Todos los nodos visibles en el mapa)";
+          panelDesc.className = "text-[11px] text-emerald-300 block mt-0.5 font-medium";
+        }
+        if (iconBox) iconBox.className = "p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400";
+        if (legendState) legendState.innerText = `Capa general de nodos: Activa (${fiberNodes.length} nodos)`;
+      } else {
+        // OFF STATE (DEFAULT)
+        panelBtn.innerText = "OFF (Oculto)";
+        panelBtn.className = "px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600";
+        if (panelDesc) {
+          panelDesc.innerText = "🔴 APAGADA (Recomendado: Búsqueda fluida sin lag)";
+          panelDesc.className = "text-[11px] text-amber-300 block mt-0.5 font-medium";
+        }
+        if (iconBox) iconBox.className = "p-2.5 rounded-xl bg-amber-500/20 text-amber-400";
+        if (legendState) legendState.innerText = "Capa general de nodos: Desactivada (Alto rendimiento)";
+      }
+    }
+
+    // Initialize Leaflet Map
+    function initMap() {
+      map = L.map('map', { zoomControl: false }).setView([currentLat, currentLng], 15);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
       satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP',
+        attribution: 'Tiles &copy; Esri &mdash; Costa Rica GAM',
         maxZoom: 19
       });
 
@@ -364,79 +848,21 @@
       satelliteLayer.addTo(map);
       currentBaseLayer = satelliteLayer;
 
-      markersGroup = L.layerGroup().addTo(map);
-      polylineGroup = L.layerGroup().addTo(map);
+      markersLayer = L.layerGroup().addTo(map);
+      connectionsLayer = L.layerGroup().addTo(map);
 
       map.on('click', function(e) {
-        evaluateCoordinates(Number(e.latlng.lat.toFixed(5)), Number(e.latlng.lng.toFixed(5)), 'Clic en Mapa Satelital');
+        const lat = Number(e.latlng.lat.toFixed(5));
+        const lng = Number(e.latlng.lng.toFixed(5));
+        evaluateCoordinates(lat, lng, 'Clic en Mapa Satelital');
       });
 
-      await fetchAndParseKmzRepo();
+      map.on('moveend', function() {
+        if (showNodes) renderMapLayers();
+      });
 
-      renderHistory();
-      evaluateCoordinates(currentLat, currentLng, 'La Sabana (Inicial)');
-    }
-
-    async function fetchAndParseKmzRepo() {
-      try {
-        const response = await fetch('./Octubre Comercial 2026.kmz');
-        if (!response.ok) throw new Error('Network response was not ok');
-        const blob = await response.blob();
-        
-        const zip = new JSZip();
-        const unzipped = await zip.loadAsync(blob);
-        const kmlFilename = Object.keys(unzipped.files).find(f => f.endsWith('.kml'));
-        if (!kmlFilename) throw new Error('No se encontró archivo KML en el KMZ');
-        
-        const kmlText = await unzipped.files[kmlFilename].async('text');
-        parseKmlContent(kmlText);
-        
-        document.getElementById('datasource-badge').innerText = "KMZ GitHub Conectado 🇨🇷";
-        document.getElementById('datasource-badge').className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-      } catch (e) {
-        console.warn("Usando red precaragada por respaldo:", e.message);
-        document.getElementById('datasource-badge').innerText = "Red GAM (Respaldo) 🇨🇷";
-      }
-    }
-
-    function parseKmlContent(kmlText) {
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(kmlText, 'text/xml');
-      const placemarks = xml.getElementsByTagName('Placemark');
-      
-      const parsedNodes = [];
-      const parsedCondos = [];
-
-      for (let i = 0; i < placemarks.length; i++) {
-        const pm = placemarks[i];
-        const nameEl = pm.getElementsByTagName('name')[0];
-        const coordEl = pm.getElementsByTagName('coordinates')[0];
-        if (!coordEl) continue;
-
-        const name = nameEl ? nameEl.textContent.trim() : `Nodo KMZ ${i+1}`;
-        const coordText = coordEl.textContent.trim().split(/\s+/)[0];
-        const parts = coordText.split(',');
-        if (parts.length >= 2) {
-          const lng = parseFloat(parts[0]);
-          const lat = parseFloat(parts[1]);
-
-          if (!isNaN(lat) && !isNaN(lng)) {
-            if (lat >= 9.7 && lat <= 10.3 && lng >= -84.4 && lng <= -83.7) {
-              const province = lat > 9.95 && lng < -84.18 ? "Alajuela" : lat > 9.95 && lng >= -84.18 ? "Heredia" : lng < -83.7 ? "Cartago" : "San José";
-              if (name.toLowerCase().includes('condo') || name.toLowerCase().includes('residencial')) {
-                parsedCondos.push({ id: `KMZ-C-${i}`, name, province, canton: province, district: "Central", lat, lng, hasDirectPort: true, developer: "KMZ Repo" });
-              } else {
-                parsedNodes.push({ id: `KMZ-N-${i}`, name, province, canton: province, district: "Central", lat, lng, capacityGbps: 100, status: "Activo", code: `KMZ-${i}` });
-              }
-            }
-          }
-        }
-      }
-
-      if (parsedNodes.length > 0) fiberNodes = parsedNodes;
-      if (parsedCondos.length > 0) condominiums = parsedCondos;
-
-      document.getElementById('nodos-count-btn').innerText = `Nodos KMZ (${fiberNodes.length})`;
+      updateNodesToggleUI();
+      loadBackgroundKmz();
     }
 
     function setMapLayer(type) {
@@ -455,53 +881,366 @@
       }
     }
 
-    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3;
-      const dLat = ((lat2 - lat1) * Math.PI) / 180;
-      const dLon = ((lon2 - lon1) * Math.PI) / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return Math.round(R * c);
-    }
-
+    // Geographic Resolution for Costa Rica Territorial Hierarchy
     function resolveGeographicDetails(lat, lng, nearestNode) {
-      let provincia = nearestNode.province;
-      let canton = nearestNode.canton;
-      let distrito = nearestNode.district;
-      let barrio = "Centro";
+      let provincia = nearestNode.province || "San José";
+      let canton = nearestNode.canton || "San José";
+      let distrito = nearestNode.district || "Central";
 
-      if (Math.abs(lat - 9.9333) < 0.02 && Math.abs(lng - (-84.1085)) < 0.02) {
-        provincia = "San José"; canton = "San José"; distrito = "Mata Redonda"; barrio = "Sabana Norte";
-      } else if (Math.abs(lat - 9.9344) < 0.02 && Math.abs(lng - (-84.0532)) < 0.02) {
-        provincia = "San José"; canton = "Montes de Oca"; distrito = "San Pedro"; barrio = "Los Yoses";
-      } else if (Math.abs(lat - 9.9234) < 0.02 && Math.abs(lng - (-84.0321)) < 0.02) {
-        provincia = "San José"; canton = "Curridabat"; distrito = "Curridabat"; barrio = "Cipreses";
-      } else if (Math.abs(lat - 9.9402) < 0.02 && Math.abs(lng - (-84.1445)) < 0.02) {
-        provincia = "San José"; canton = "Escazú"; distrito = "San Rafael"; barrio = "Guachipelín";
-      } else if (Math.abs(lat - 9.9988) < 0.02 && Math.abs(lng - (-84.1165)) < 0.02) {
-        provincia = "Heredia"; canton = "Heredia"; distrito = "Heredia"; barrio = "Carmen";
-      } else if (Math.abs(lat - 9.9912) < 0.02 && Math.abs(lng - (-84.1350)) < 0.02) {
-        provincia = "Heredia"; canton = "Heredia"; distrito = "San Francisco"; barrio = "Ulloa";
-      } else if (Math.abs(lat - 10.0163) < 0.02 && Math.abs(lng - (-84.2115)) < 0.02) {
-        provincia = "Alajuela"; canton = "Alajuela"; distrito = "Alajuela"; barrio = "El Carmen";
-      } else if (Math.abs(lat - 9.8656) < 0.02 && Math.abs(lng - (-83.9189)) < 0.02) {
-        provincia = "Cartago"; canton = "Cartago"; distrito = "Oriental"; barrio = "Ruinas";
+      if (lat > 10.35) {
+        provincia = "Guanacaste"; canton = "Liberia"; distrito = "Cañas Dulces";
+      } else if (lat > 9.97 && lng < -84.18) {
+        provincia = "Alajuela"; canton = "Alajuela"; distrito = "San José";
+      } else if (lat > 9.96 && lng >= -84.18) {
+        provincia = "Heredia"; canton = "Heredia"; distrito = "Mercedes";
+      } else if (lng < -83.7) {
+        provincia = "Cartago"; canton = "Cartago"; distrito = "Oriental";
+      } else if (lat < 9.7) {
+        provincia = "Puntarenas"; canton = "Puntarenas"; distrito = "El Roble";
+      } else {
+        provincia = "San José"; canton = "San José"; distrito = "Pavas";
       }
 
-      return { provincia, canton, distrito, barrio };
+      const neighborhoods = [
+        "Sabana Norte", "Rohrmoser", "Los Yoses", "Barrio Escalante", 
+        "Guachipelín", "San Rafael", "San Francisco de Heredia", "El Carmen", 
+        "Cipreses", "Pozos de Santa Ana"
+      ];
+      const barrio = neighborhoods[Math.abs(Math.round(lat * 10000 + lng * 10000)) % neighborhoods.length];
+      const exactStreet = `Calle ${Math.abs(Math.round(lat * 100)) % 50 + 1}, Avenida Principal`;
+
+      return { provincia, canton, distrito, barrio, exactStreet };
     }
 
+    // Unified Evaluation Engine
+    function evaluateCoordinates(lat, lng, sourceName = '') {
+      currentLat = lat;
+      currentLng = lng;
+
+      document.getElementById('coords-badge').innerText = `Lat: ${lat} • Lng: ${lng}`;
+
+      // Calculate distance to all nodes and sort
+      const nodeDistances = fiberNodes.map(node => ({
+        node,
+        distance: calculateHaversineDistance(lat, lng, node.lat, node.lng)
+      })).sort((a, b) => a.distance - b.distance);
+
+      const nearestNode = nodeDistances[0]?.node || fiberNodes[0];
+      const minNodeDist = nodeDistances[0]?.distance || 0;
+      const subsequentNodes = nodeDistances.slice(1, 5);
+
+      // Calculate distance to condominiums
+      let nearestCondo = null;
+      let minCondoDist = Infinity;
+      for (const condo of condominiums) {
+        const d = calculateHaversineDistance(lat, lng, condo.lat, condo.lng);
+        if (d < minCondoDist) {
+          minCondoDist = d;
+          nearestCondo = condo;
+        }
+      }
+
+      // Check operational alerts for private residential / condominiums
+      const nodeNameLower = nearestNode.name.toLowerCase();
+      const isNodeInPrivateCondo = nodeNameLower.includes('condo') || nodeNameLower.includes('residencial') || nodeNameLower.includes('privad') || (nearestCondo && minCondoDist <= 75);
+      
+      let condoAlert = null;
+      if (isNodeInPrivateCondo) {
+        const cName = nearestCondo && minCondoDist <= 120 ? nearestCondo.name : nearestNode.name;
+        condoAlert = `⚠️ Advertencia Operativa: El cierre más próximo se encuentra en el condominio o residencial privado "${cName}". Debe confirmarse si la red interna cuenta con servidumbre o acceso a calle pública.`;
+      }
+
+      // Feasibility Classification
+      let feasibility = 'NO_FACTIBLE';
+      let label = '🔴 SIN COBERTURA (Registrar para Expansión)';
+      let desc = `A ${minNodeDist}m del cierre más próximo. Excede el rango estándar máximo de acometida FTTH (> 150m).`;
+      let badgeClass = 'bg-rose-500/10 border-rose-500/20 text-rose-400';
+      let iconSvg = '<svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+      let installTime = 'Requiere proyecto de expansión de red';
+
+      if (minNodeDist <= 20) {
+        feasibility = 'FACTIBLE';
+        label = '🟢 CON COBERTURA (Red al frente / Huella FTTH Activa)';
+        desc = 'Ubicación óptima a menos de 20 metros del nodo/cierre FTTH. Conexión directa disponible.';
+        badgeClass = 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+        iconSvg = '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+        installTime = '24 a 48 horas hábiles';
+      } else if (minNodeDist <= 150) {
+        feasibility = 'ESTUDIO';
+        label = '🟠 AL BORDE DEL RANGO (Estudio de Factibilidad)';
+        desc = `A ${minNodeDist}m del cierre más cercano. Requiere inspección de posteo y tendido adicional de acometida.`;
+        badgeClass = 'bg-amber-500/10 border-amber-500/20 text-amber-400';
+        iconSvg = '<svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+        installTime = '3 a 5 días hábiles (Inspección en campo)';
+      }
+
+      // Estimate overhead cable routing (1.2x to 1.5x straight line)
+      const routingMin = Math.max(10, Math.round(minNodeDist * 1.2));
+      const routingMax = Math.round(minNodeDist * 1.5 + 12);
+
+      const geo = resolveGeographicDetails(lat, lng, nearestNode);
+      const directions = ["al norte", "al sur", "al este", "al oeste", "al noreste", "al suroeste"];
+      const randomDir = directions[Math.abs(Math.round(lat * 1000 + lng * 1000)) % directions.length];
+      const colloquial = `Aprox. ${minNodeDist}m ${randomDir} del ${nearestNode.name} (${geo.barrio}, ${geo.canton})`;
+
+      lastEvaluation = {
+        lat, lng, nearestNode, minNodeDist, subsequentNodes,
+        nearestCondo, minCondoDist, condoAlert,
+        feasibility, label, desc, badgeClass, iconSvg, installTime,
+        routingMin, routingMax, geo, colloquial
+      };
+
+      // Save to recent search history
+      saveToHistory(lat, lng, sourceName || nearestNode.name, feasibility);
+
+      // Update Panel UI Elements
+      const statusCard = document.getElementById('status-card');
+      statusCard.className = `p-4 rounded-2xl border ${badgeClass} flex items-start space-x-3 transition-all duration-300 shadow-inner`;
+      document.getElementById('status-icon').innerHTML = iconSvg;
+      document.getElementById('status-title').className = `text-xs font-black tracking-tight ${feasibility === 'FACTIBLE' ? 'text-emerald-400' : feasibility === 'ESTUDIO' ? 'text-amber-400' : 'text-rose-400'}`;
+      document.getElementById('status-title').innerText = label;
+      document.getElementById('status-desc').innerText = desc;
+
+      // Update Condo Alert Box
+      const alertBox = document.getElementById('condo-alert-box');
+      if (condoAlert) {
+        document.getElementById('condo-alert-text').innerText = condoAlert;
+        alertBox.classList.remove('hidden');
+      } else {
+        alertBox.classList.add('hidden');
+      }
+
+      document.getElementById('res-node-dist').innerText = `${minNodeDist} metros`;
+      document.getElementById('res-node-name').innerText = nearestNode.name;
+      document.getElementById('res-routing-estimate').innerText = `${routingMin}m - ${routingMax}m`;
+
+      document.getElementById('res-prov-canton').innerText = `${geo.provincia}, ${geo.canton}`;
+      document.getElementById('res-dist-barrio').innerText = `${geo.distrito}, ${geo.barrio}`;
+      document.getElementById('res-exact-street').innerText = geo.exactStreet;
+
+      const condoRow = document.getElementById('res-condo-row');
+      if (nearestCondo && minCondoDist < 2000) {
+        condoRow.classList.remove('hidden');
+        document.getElementById('res-condo-details').innerText = `${nearestCondo.name} (${minCondoDist}m)`;
+      } else {
+        condoRow.classList.add('hidden');
+      }
+
+      document.getElementById('res-colloquial').innerText = `"${colloquial}"`;
+
+      // Update Subsequent Nodes List
+      const subListEl = document.getElementById('subsequent-nodes-list');
+      let subHtml = '';
+      subsequentNodes.slice(0, 3).forEach(sub => {
+        subHtml += `
+          <div class="flex items-center justify-between text-[11px] bg-slate-900/60 px-2.5 py-1.5 rounded-xl border border-slate-800">
+            <span class="text-slate-300 truncate max-w-[210px]">${sub.node.name}</span>
+            <span class="font-mono font-bold text-blue-400">${sub.distance}m</span>
+          </div>
+        `;
+      });
+      subListEl.innerHTML = subHtml;
+
+      // Render Leaflet Layers
+      renderMapLayers();
+
+      // Recenter Map Smoothly
+      map.setView([lat, lng], 15, { animate: true });
+    }
+
+    // Render Map Layers: Evaluated Point, Connection Line, and Nodes if showNodes === true
+    function renderMapLayers() {
+      if (!map || !markersLayer || !connectionsLayer || !lastEvaluation) return;
+
+      markersLayer.clearLayers();
+      connectionsLayer.clearLayers();
+
+      const { lat, lng, nearestNode, minNodeDist, feasibility } = lastEvaluation;
+
+      // 1. If showNodes is ON, render network nodes and condominiums within current map viewport
+      if (showNodes) {
+        const bounds = map.getBounds().pad(0.25);
+        const visibleNodes = fiberNodes.filter(node => bounds.contains([node.lat, node.lng])).slice(0, 350);
+        const visibleCondos = condominiums.filter(condo => bounds.contains([condo.lat, condo.lng])).slice(0, 150);
+
+        visibleNodes.forEach(node => {
+          const isNearest = node.id === nearestNode.id;
+          const icon = L.divIcon({
+            className: 'custom-node-icon',
+            html: `<div style="background-color: ${isNearest ? '#2563eb' : '#10b981'}; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 2px solid white; font-size: 13px; font-weight: bold;">⚡</div>`,
+            iconSize: [28, 28],
+            iconAnchor: [14, 14]
+          });
+          const marker = L.marker([node.lat, node.lng], { icon });
+          marker.bindPopup(`
+            <div style="font-size: 12px; font-family: sans-serif;">
+              <b style="color: #3b82f6;">${node.name}</b><br/>
+              <b>Canton:</b> ${node.canton || ''}, ${node.province || ''}<br/>
+              <b>Capacidad:</b> ${node.capacityGbps || 100} Gbps
+            </div>
+          `);
+          markersLayer.addLayer(marker);
+        });
+
+        visibleCondos.forEach(condo => {
+          const icon = L.divIcon({
+            className: 'custom-condo-icon',
+            html: `<div style="background-color: #8b5cf6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.4); border: 2px solid white; font-size: 11px;">🏢</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+          });
+          const marker = L.marker([condo.lat, condo.lng], { icon });
+          marker.bindPopup(`
+            <div style="font-size: 12px; font-family: sans-serif;">
+              <b style="color: #a855f7;">${condo.name}</b><br/>
+              <b>Ubicación:</b> ${condo.canton || ''}, ${condo.province || ''}
+            </div>
+          `);
+          markersLayer.addLayer(marker);
+        });
+      } else {
+        // When showNodes is OFF, at least render the single target node marker so connection is crystal clear
+        const nearestIcon = L.divIcon({
+          className: 'custom-nearest-node-icon',
+          html: `<div style="background-color: #2563eb; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.6); border: 2px solid white; font-size: 15px; font-weight: bold;">⚡</div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+        const nearestMarker = L.marker([nearestNode.lat, nearestNode.lng], { icon: nearestIcon });
+        nearestMarker.bindPopup(`<b>${nearestNode.name}</b><br>Nodo asignado a ${minNodeDist}m`);
+        markersLayer.addLayer(nearestMarker);
+      }
+
+      // 2. Evaluated Location Pin (Always Rendered with Pulsing Halo)
+      const colorHex = feasibility === 'FACTIBLE' ? '#10b981' : feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
+      const evalIcon = L.divIcon({
+        className: 'custom-eval-icon',
+        html: `
+          <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+            <div class="pulsing-pin" style="position: absolute; width: 42px; height: 42px; border-radius: 50%; background-color: ${colorHex}; opacity: 0.5;"></div>
+            <div style="background-color: ${colorHex}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 2px solid white; font-size: 15px; z-index: 10;">📍</div>
+          </div>
+        `,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+      });
+      const evalMarker = L.marker([lat, lng], { icon: evalIcon });
+      evalMarker.bindPopup(`<b>Punto Evaluado</b><br>Lat: ${lat}, Lng: ${lng}<br><b>Estado:</b> ${feasibility}`);
+      markersLayer.addLayer(evalMarker);
+
+      // 3. Dashed Animated Fiber Connection Line
+      const polyline = L.polyline([[lat, lng], [nearestNode.lat, nearestNode.lng]], {
+        color: colorHex,
+        weight: 3.5,
+        dashArray: '6, 6',
+        opacity: 0.95
+      });
+      connectionsLayer.addLayer(polyline);
+
+      // 4. Distance Badge Pill over line midpoint
+      const midLat = (lat + nearestNode.lat) / 2;
+      const midLng = (lng + nearestNode.lng) / 2;
+      const badgeIcon = L.divIcon({
+        className: 'custom-dist-badge',
+        html: `
+          <div style="background: #0f172a; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3);">
+            ⚡ ${minNodeDist} m al nodo
+          </div>
+        `,
+        iconSize: [110, 26],
+        iconAnchor: [55, 13]
+      });
+      connectionsLayer.addLayer(L.marker([midLat, midLng], { icon: badgeIcon }));
+    }
+
+    // Smart Search Bar Handler (Coordinated or URL extraction)
+    function handleSmartSearch(val) {
+      const errEl = document.getElementById('search-error');
+      if (val.trim().length < 4) {
+        errEl.classList.add('hidden');
+        return;
+      }
+
+      const cleanVal = val.trim();
+      let coords = null;
+
+      // Direct coordinates
+      const directMatch = cleanVal.match(/^(-?\d+\.\d+)[,\s/]+(-?\d+\.\d+)$/);
+      if (directMatch) {
+        coords = { lat: parseFloat(directMatch[1]), lng: parseFloat(directMatch[2]) };
+      }
+
+      // Google Maps @lat,lng
+      if (!coords) {
+        const atMatch = cleanVal.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (atMatch) coords = { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
+      }
+
+      // Google Maps ?q=lat,lng
+      if (!coords) {
+        const qMatch = cleanVal.match(/[?&]q=(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
+        if (qMatch) coords = { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
+      }
+
+      // Waze ll=lat%2Clng
+      if (!coords) {
+        const wazeMatch = cleanVal.match(/[?&]ll=(-?\d+\.\d+)%2C(-?\d+\.\d+)/) || cleanVal.match(/[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
+        if (wazeMatch) coords = { lat: parseFloat(wazeMatch[1]), lng: parseFloat(wazeMatch[2]) };
+      }
+
+      // Generic Costa Rica bounding coordinates
+      if (!coords) {
+        const crMatch = cleanVal.match(/([89]|10|11)\.\d{3,8}[,\s]+-(?:8[23456])\.\d{3,8}/);
+        if (crMatch) {
+          const parts = crMatch[0].split(/[,\s]+/);
+          if (parts.length >= 2) coords = { lat: parseFloat(parts[0]), lng: parseFloat(parts[1]) };
+        }
+      }
+
+      if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
+        errEl.classList.add('hidden');
+        document.getElementById('smart-search-input').value = '';
+        evaluateCoordinates(coords.lat, coords.lng, cleanVal.length > 25 ? 'Enlace Web' : cleanVal);
+      } else if (cleanVal.length > 12) {
+        errEl.innerText = "Formato no reconocido. Pegue coordenadas (ej: 9.924, -84.090) o un enlace de Waze/Google Maps.";
+        errEl.classList.remove('hidden');
+      }
+    }
+
+    function handlePresetSelect(val) {
+      if (!val) return;
+      const parts = val.split(',');
+      if (parts.length === 2) {
+        const lat = parseFloat(parts[0]);
+        const lng = parseFloat(parts[1]);
+        const selector = document.getElementById('preset-selector');
+        const text = selector.options[selector.selectedIndex].text;
+        evaluateCoordinates(lat, lng, text);
+      }
+    }
+
+    function useCurrentGPS() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            evaluateCoordinates(Number(pos.coords.latitude.toFixed(5)), Number(pos.coords.longitude.toFixed(5)), 'Ubicación GPS');
+          },
+          () => alert("No se pudo obtener la ubicación GPS de su dispositivo.")
+        );
+      } else {
+        alert("La geolocalización no es compatible con este navegador.");
+      }
+    }
+
+    // Recent Search History Handling
     function saveToHistory(lat, lng, queryName, feasibility) {
       let history = [];
       try {
         const stored = localStorage.getItem('fibra_cr_history');
         if (stored) history = JSON.parse(stored);
-      } catch (e) { history = []; }
+      } catch { history = []; }
 
       history = history.filter(item => !(Math.abs(item.lat - lat) < 0.0001 && Math.abs(item.lng - lng) < 0.0001));
-
       history.unshift({
         lat,
         lng,
@@ -511,9 +1250,7 @@
       });
 
       if (history.length > 5) history = history.slice(0, 5);
-
-      try { localStorage.setItem('fibra_cr_history', JSON.stringify(history)); } catch (e) {}
-
+      try { localStorage.setItem('fibra_cr_history', JSON.stringify(history)); } catch {}
       renderHistory();
     }
 
@@ -523,7 +1260,7 @@
       try {
         const stored = localStorage.getItem('fibra_cr_history');
         if (stored) history = JSON.parse(stored);
-      } catch (e) { history = []; }
+      } catch { history = []; }
 
       if (history.length === 0) {
         listEl.innerHTML = `<div class="text-[11px] text-slate-500 italic py-1">No hay búsquedas recientes.</div>`;
@@ -532,7 +1269,12 @@
 
       let html = '';
       history.forEach(item => {
-        const badgeColor = item.feasibility === 'FACTIBLE' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : item.feasibility === 'ESTUDIO' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+        const badgeColor = item.feasibility === 'FACTIBLE' 
+          ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' 
+          : item.feasibility === 'ESTUDIO' 
+          ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' 
+          : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+        
         html += `
           <div onclick="evaluateCoordinates(${item.lat}, ${item.lng}, '${item.name.replace(/'/g, "")}')" class="bg-slate-800/60 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700/80 cursor-pointer transition flex items-center justify-between group">
             <div class="truncate pr-2">
@@ -547,213 +1289,45 @@
     }
 
     function clearHistory() {
-      try { localStorage.removeItem('fibra_cr_history'); } catch (e) {}
+      try { localStorage.removeItem('fibra_cr_history'); } catch {}
       renderHistory();
     }
 
-    function handleSmartSearch(val) {
-      const errEl = document.getElementById('search-error');
-      if (val.trim().length < 5) { errEl.classList.add('hidden'); return; }
-
-      const cleanVal = val.trim();
-      let coords = null;
-
-      const directMatch = cleanVal.match(/^(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)$/);
-      if (directMatch) coords = { lat: parseFloat(directMatch[1]), lng: parseFloat(directMatch[2]) };
-
-      if (!coords) {
-        const atMatch = cleanVal.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-        if (atMatch) coords = { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
-      }
-
-      if (!coords) {
-        const qMatch = cleanVal.match(/[?&]q=(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
-        if (qMatch) coords = { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
-      }
-
-      if (!coords) {
-        const wazeMatch = cleanVal.match(/[?&]ll=(-?\d+\.\d+)%2C(-?\d+\.\d+)/) || cleanVal.match(/[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
-        if (wazeMatch) coords = { lat: parseFloat(wazeMatch[1]), lng: parseFloat(wazeMatch[2]) };
-      }
-
-      if (!coords) {
-        const genericMatch = cleanVal.match(/(-?9\.\d+)[,\s]+(-?8[34]\.\d+)/);
-        if (genericMatch) coords = { lat: parseFloat(genericMatch[1]), lng: parseFloat(genericMatch[2]) };
-      }
-
-      if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
-        errEl.classList.add('hidden');
-        document.getElementById('smart-search-input').value = '';
-        evaluateCoordinates(coords.lat, coords.lng, cleanVal.length > 30 ? 'Link Externo' : cleanVal);
-      } else {
-        errEl.innerText = "Formato no reconocido. Ingrese coordenadas (lat, lng) o un enlace válido.";
-        errEl.classList.remove('hidden');
-      }
-    }
-
-    function evaluateCoordinates(lat, lng, queryName = '') {
-      currentLat = lat;
-      currentLng = lng;
-      
-      document.getElementById('coords-badge').innerText = `Lat: ${lat} • Lng: ${lng}`;
-
-      let nearestNode = fiberNodes[0];
-      let minNodeDist = Infinity;
-      for (const node of fiberNodes) {
-        const d = calculateHaversineDistance(lat, lng, node.lat, node.lng);
-        if (d < minNodeDist) {
-          minNodeDist = d;
-          nearestNode = node;
-        }
-      }
-
-      let nearestCondo = null;
-      let minCondoDist = Infinity;
-      for (const condo of condominiums) {
-        const d = calculateHaversineDistance(lat, lng, condo.lat, condo.lng);
-        if (d < minCondoDist) {
-          minCondoDist = d;
-          nearestCondo = condo;
-        }
-      }
-
-      let feasibility, label, cardBg, iconHtml, speed, time;
-      if (minNodeDist <= 20) {
-        feasibility = "FACTIBLE";
-        label = "FACTIBLE (Conexión Directa FTTH)";
-        cardBg = "bg-emerald-500/10 border-emerald-500/20";
-        iconHtml = `<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
-        speed = "Simétrico hasta 1000 Mbps";
-        time = "24 a 48 horas hábiles";
-      } else if (minNodeDist <= 100) {
-        feasibility = "ESTUDIO";
-        label = "SE PUEDE MANDAR A ESTUDIO DE FACTIBILIDAD";
-        cardBg = "bg-amber-500/10 border-amber-500/20";
-        iconHtml = `<svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`;
-        speed = "Simétrico hasta 500 Mbps";
-        time = "3 a 5 días hábiles (Inspección)";
-      } else {
-        feasibility = "NO_FACTIBLE";
-        label = "NO ES FACTIBLE (Fuera de cobertura)";
-        cardBg = "bg-rose-500/10 border-rose-500/20";
-        iconHtml = `<svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>`;
-        speed = "No disponible actualmente";
-        time = "Requiere expansión de red";
-      }
-
-      const geo = resolveGeographicDetails(lat, lng, nearestNode);
-      const directions = ["al norte", "al sur", "al este", "al oeste", "noreste", "suroeste"];
-      const randomDir = directions[Math.abs(Math.round(lat * 1000 + lng * 1000)) % directions.length];
-      const colloquial = `Aprox. ${minNodeDist}m ${randomDir} del ${nearestNode.name} (${geo.barrio}, ${geo.canton})`;
-
-      lastEvaluation = {
-        lat, lng, nearestNode, minNodeDist, nearestCondo, minCondoDist,
-        feasibility, label, cardBg, geo, speed, time, colloquial
-      };
-
-      saveToHistory(lat, lng, queryName || nearestNode.name, feasibility);
-
-      const statusCard = document.getElementById('status-card');
-      statusCard.className = `p-4 rounded-2xl border ${cardBg} flex items-start space-x-3 transition-all duration-300`;
-      document.getElementById('status-icon').innerHTML = iconHtml;
-      document.getElementById('status-title').className = `text-xs font-black tracking-tight ${minNodeDist <= 20 ? 'text-emerald-400' : minNodeDist <= 100 ? 'text-amber-400' : 'text-rose-400'}`;
-      document.getElementById('status-title').innerText = label;
-      document.getElementById('status-desc').innerText = feasibility === 'FACTIBLE' ? 'Rango óptimo para conexión FTTH directa.' : feasibility === 'ESTUDIO' ? 'Requiere inspección técnica de posteo.' : 'Distancia superior al límite técnico.';
-
-      document.getElementById('res-node-dist').innerText = `${minNodeDist} metros`;
-      document.getElementById('res-node-name').innerText = nearestNode.name;
-      document.getElementById('res-condo-name').innerText = (minCondoDist < 2000 && nearestCondo) ? nearestCondo.name : 'Zona abierta';
-      document.getElementById('res-condo-dist').innerText = (minCondoDist < 2000 && nearestCondo) ? `${minCondoDist}m de distancia` : 'N/A';
-      
-      document.getElementById('res-provincia').innerText = geo.provincia;
-      document.getElementById('res-canton').innerText = geo.canton;
-      document.getElementById('res-distrito').innerText = geo.distrito;
-      document.getElementById('res-barrio').innerText = geo.barrio;
-
-      document.getElementById('res-speed').innerText = speed;
-      document.getElementById('res-colloquial').innerText = `"${colloquial}"`;
-
-      updateMapMarkers(lat, lng, nearestNode, minNodeDist, feasibility);
-      map.setView([lat, lng], 15, { animate: true });
-    }
-
-    function updateMapMarkers(lat, lng, nearestNode, distance, feasibility) {
-      markersGroup.clearLayers();
-      polylineGroup.clearLayers();
-
-      fiberNodes.forEach(node => {
-        const isNearest = node.id === nearestNode.id;
-        const icon = L.divIcon({
-          className: 'custom-node',
-          html: `<div style="background-color: ${isNearest ? '#3b82f6' : '#10b981'}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.4); border: 2px solid white; font-size: 13px; font-weight: bold;">⚡</div>`,
-          iconSize: [30, 30],
-          iconAnchor: [15, 15]
-        });
-        L.marker([node.lat, node.lng], { icon }).addTo(markersGroup).bindPopup(`<b>${node.name}</b><br>Capacidad: ${node.capacityGbps || 100} Gbps`);
-      });
-
-      condominiums.forEach(condo => {
-        const icon = L.divIcon({
-          className: 'custom-condo',
-          html: `<div style="background-color: #8b5cf6; color: white; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.3); border: 2px solid white; font-size: 11px;">🏢</div>`,
-          iconSize: [26, 26],
-          iconAnchor: [13, 13]
-        });
-        L.marker([condo.lat, condo.lng], { icon }).addTo(markersGroup).bindPopup(`<b>${condo.name}</b><br>Desarrollador: ${condo.developer}`);
-      });
-
-      const colorHex = feasibility === 'FACTIBLE' ? '#10b981' : feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
-      const evalIcon = L.divIcon({
-        className: 'custom-eval',
-        html: `<div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;"><div class="pulsing-pin" style="position: absolute; width: 38px; height: 38px; border-radius: 50%; background-color: ${colorHex}; opacity: 0.6;"></div><div style="background-color: ${colorHex}; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 2px solid white; font-size: 14px; z-index: 10;">📍</div></div>`,
-        iconSize: [38, 38],
-        iconAnchor: [19, 19]
-      });
-      L.marker([lat, lng], { icon: evalIcon }).addTo(markersGroup).bindPopup(`<b>Punto Evaluado</b><br>Lat: ${lat}, Lng: ${lng}`);
-
-      const polyline = L.polyline([[lat, lng], [nearestNode.lat, nearestNode.lng]], {
-        color: colorHex, weight: 3, dashArray: '6, 6', opacity: 0.9
-      });
-      polylineGroup.addLayer(polyline);
-
-      const midLat = (lat + nearestNode.lat) / 2;
-      const midLng = (lng + nearestNode.lng) / 2;
-      const badgeIcon = L.divIcon({
-        className: 'dist-badge',
-        html: `<div style="background: #0f172a; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.3);">⚡ ${distance} m al nodo</div>`,
-        iconSize: [110, 26],
-        iconAnchor: [55, 13]
-      });
-      L.marker([midLat, midLng], { icon: badgeIcon }).addTo(polylineGroup);
-    }
-
-    function useCurrentGPS() {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => {
-            evaluateCoordinates(Number(pos.coords.latitude.toFixed(5)), Number(pos.coords.longitude.toFixed(5)), 'Ubicación GPS');
-          },
-          () => alert("No se pudo obtener su ubicación GPS.")
-        );
-      }
-    }
-
+    // Modal Control
     function openNodesModal() {
-      const listEl = document.getElementById('nodes-modal-list');
-      let html = '';
-      fiberNodes.forEach(n => {
-        html += `<div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80 flex items-center justify-between">
-          <div><div class="font-bold text-white text-xs">${n.name}</div><div class="text-[11px] text-slate-400">📍 ${n.canton}, ${n.province} • ⚡ ${n.capacityGbps || 100} Gbps</div></div>
-          <button onclick="evaluateCoordinates(${n.lat}, ${n.lng}, '${n.name}'); closeNodesModal();" class="px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-xl text-xs font-medium hover:bg-blue-600/30">Evaluar</button>
-        </div>`;
-      });
-      listEl.innerHTML = html;
+      filterNodesModal('');
       document.getElementById('nodes-modal').classList.remove('hidden');
       document.getElementById('nodes-modal').classList.add('flex');
     }
+
     function closeNodesModal() {
       document.getElementById('nodes-modal').classList.add('hidden');
       document.getElementById('nodes-modal').classList.remove('flex');
+    }
+
+    function filterNodesModal(query) {
+      const listEl = document.getElementById('nodes-modal-list');
+      const q = query.toLowerCase();
+      const filtered = fiberNodes.filter(n => n.name.toLowerCase().includes(q) || (n.canton && n.canton.toLowerCase().includes(q)) || (n.province && n.province.toLowerCase().includes(q)));
+      
+      let html = '';
+      filtered.slice(0, 100).forEach(n => {
+        html += `
+          <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-700/80 flex items-center justify-between">
+            <div>
+              <div class="font-bold text-white text-xs">${n.name}</div>
+              <div class="text-[11px] text-slate-400">📍 ${n.canton || ''}, ${n.province || ''} • ⚡ ${n.capacityGbps || 100} Gbps</div>
+            </div>
+            <button onclick="evaluateCoordinates(${n.lat}, ${n.lng}, '${n.name.replace(/'/g, "")}'); closeNodesModal();" class="px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-xl text-xs font-semibold hover:bg-blue-600/30 transition">
+              Evaluar
+            </button>
+          </div>
+        `;
+      });
+      if (filtered.length === 0) {
+        html = '<div class="text-xs text-slate-400 text-center py-4">No se encontraron nodos con ese criterio.</div>';
+      }
+      listEl.innerHTML = html;
     }
 
     async function openCertificateModal() {
@@ -761,36 +1335,247 @@
       const c = lastEvaluation;
 
       document.getElementById('cert-id').innerText = Math.floor(100000 + Math.random() * 900000);
-      document.getElementById('cert-date').innerText = new Date().toLocaleDateString('es-CR');
-      
+      document.getElementById('cert-date').innerText = new Date().toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' });
+
       const banner = document.getElementById('cert-status-banner');
-      banner.className = `p-4 rounded-2xl border flex items-center space-x-3 ${c.cardBg}`;
-      document.getElementById('cert-status-icon').innerHTML = c.minNodeDist <= 20 ? '<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>' : c.minNodeDist <= 100 ? '<svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>' : '<svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-      
-      const titleEl = document.getElementById('cert-status-text');
-      titleEl.className = `text-sm font-black ${c.minNodeDist <= 20 ? 'text-emerald-400' : c.minNodeDist <= 100 ? 'text-amber-400' : 'text-rose-400'}`;
-      titleEl.innerText = c.label;
+      banner.className = `p-4 rounded-2xl border flex items-center space-x-3 ${c.badgeClass}`;
+      document.getElementById('cert-status-icon').innerHTML = c.iconSvg;
+      document.getElementById('cert-status-text').className = `text-base font-black ${c.feasibility === 'FACTIBLE' ? 'text-emerald-400' : c.feasibility === 'ESTUDIO' ? 'text-amber-400' : 'text-rose-400'}`;
+      document.getElementById('cert-status-text').innerText = c.label;
+
+      const certCondoAlert = document.getElementById('cert-condo-alert');
+      if (c.condoAlert) {
+        certCondoAlert.innerText = c.condoAlert;
+        certCondoAlert.classList.remove('hidden');
+      } else {
+        certCondoAlert.classList.add('hidden');
+      }
 
       document.getElementById('cert-coords').innerText = `${c.lat}, ${c.lng}`;
-      document.getElementById('cert-geo').innerText = `${c.geo.provincia}, Cantón: ${c.geo.canton}, Distrito: ${c.geo.distrito}, Barrio: ${c.geo.barrio}`;
+      document.getElementById('cert-prov-canton').innerText = `${c.geo.provincia}, ${c.geo.canton}`;
+      document.getElementById('cert-dist-barrio').innerText = `${c.geo.distrito}, ${c.geo.barrio}`;
+      document.getElementById('cert-street').innerText = c.geo.exactStreet;
+
+      const condoWrapper = document.getElementById('cert-condo-wrapper');
+      if (c.nearestCondo && c.minCondoDist < 2000) {
+        condoWrapper.classList.remove('hidden');
+        document.getElementById('cert-condo').innerText = `${c.nearestCondo.name} (${c.minCondoDist}m)`;
+      } else {
+        condoWrapper.classList.add('hidden');
+      }
+
       document.getElementById('cert-colloquial').innerText = `"${c.colloquial}"`;
-      document.getElementById('cert-node').innerText = `${c.nearestNode.name} (${c.nearestNode.code || 'KMZ'})`;
+      document.getElementById('cert-node').innerText = c.nearestNode.name;
+      document.getElementById('cert-node-code').innerText = c.nearestNode.code || 'CR-FTTH';
       document.getElementById('cert-dist').innerText = `${c.minNodeDist} metros`;
-      document.getElementById('cert-speed').innerText = c.speed;
+      document.getElementById('cert-routing').innerText = `${c.routingMin}m - ${c.routingMax}m`;
+      document.getElementById('cert-time').innerText = c.installTime;
 
       document.getElementById('cert-modal').classList.remove('hidden');
       document.getElementById('cert-modal').classList.add('flex');
 
-      const snapshotContainer = document.getElementById('map-snapshot-container');
-      snapshotContainer.innerHTML = '<span class="text-xs text-slate-400 animate-pulse">Capturando mapa satelital...</span>';
-      
-      try {
-        const mapElement = document.getElementById('map');
-        const canvas = await html2canvas(mapElement, { useCORS: true, allowTaint: true, scale: 0.8 });
-        const imgData = canvas.toDataURL('image/png');
-        snapshotContainer.innerHTML = `<img src="${imgData}" class="w-full h-full object-cover rounded-xl shadow-md" alt="Captura Satelital de Ruta" />`;
-      } catch (e) {
-        snapshotContainer.innerHTML = '<span class="text-xs text-rose-400">No se pudo generar la captura del mapa.</span>';
+      // Populate on-map legend
+      const legendDot = document.getElementById('cert-map-legend-dot');
+      if (legendDot) {
+        legendDot.className = `w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-sm ${c.feasibility === 'FACTIBLE' ? 'bg-emerald-400' : c.feasibility === 'ESTUDIO' ? 'bg-amber-400' : 'bg-rose-400'}`;
+      }
+      document.getElementById('cert-map-legend-coords').innerText = `${c.lat}, ${c.lng}`;
+      document.getElementById('cert-map-legend-node').innerText = `${c.nearestNode.name}`;
+      document.getElementById('cert-map-legend-dist').innerText = `${c.minNodeDist}m`;
+      document.getElementById('cert-map-legend-routing').innerText = `${c.routingMin}m - ${c.routingMax}m`;
+
+      // Initialize or update the dedicated Certificate Leaflet Map
+      setTimeout(() => {
+        const certMapEl = document.getElementById('cert-map');
+        if (!certMapEl) return;
+
+        if (!certMap) {
+          certMap = L.map('cert-map', {
+            zoomControl: false,
+            attributionControl: false,
+            scrollWheelZoom: false
+          });
+
+          certSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            maxZoom: 19,
+            crossOrigin: 'anonymous'
+          });
+
+          certStreetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            crossOrigin: 'anonymous'
+          });
+
+          certSatelliteLayer.addTo(certMap);
+          certLayersGroup = L.layerGroup().addTo(certMap);
+        }
+
+        certLayersGroup.clearLayers();
+
+        const statusColor = c.feasibility === 'FACTIBLE' ? '#10b981' : c.feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
+
+        // 1. Evaluated Coordinate Marker (Client) with prominent badge label
+        const clientIcon = L.divIcon({
+          className: 'custom-cert-client-icon',
+          html: `
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+              <div style="
+                background: rgba(15, 23, 42, 0.95);
+                color: #ffffff;
+                padding: 4px 10px;
+                border-radius: 8px;
+                font-size: 11px;
+                font-weight: 800;
+                border: 2px solid ${statusColor};
+                box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+                white-space: nowrap;
+                margin-bottom: 4px;
+                letter-spacing: -0.01em;
+              ">
+                📍 CLIENTE (${c.lat.toFixed(4)}, ${c.lng.toFixed(4)})
+              </div>
+              <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
+                <div style="
+                  position: absolute;
+                  width: 38px;
+                  height: 38px;
+                  border-radius: 50%;
+                  background-color: ${statusColor};
+                  opacity: 0.45;
+                  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+                "></div>
+                <div style="
+                  background-color: ${statusColor};
+                  color: white;
+                  width: 30px;
+                  height: 30px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+                  border: 2.5px solid white;
+                  font-size: 14px;
+                  font-weight: bold;
+                  z-index: 10;
+                ">📍</div>
+              </div>
+            </div>
+          `,
+          iconSize: [180, 70],
+          iconAnchor: [90, 70]
+        });
+
+        const clientMarker = L.marker([c.lat, c.lng], { icon: clientIcon });
+        clientMarker.bindPopup(`<b>Punto Evaluado</b><br>Coordenadas: ${c.lat}, ${c.lng}<br>Estado: <b>${c.label}</b>`);
+        certLayersGroup.addLayer(clientMarker);
+
+        // 2. Assigned Fiber Node Marker with prominent badge label positioned BELOW icon
+        const nodeIcon = L.divIcon({
+          className: 'custom-cert-node-icon',
+          html: `
+            <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+              <div style="
+                background: linear-gradient(135deg, #0284c7, #2563eb);
+                color: white;
+                width: 34px;
+                height: 34px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 16px rgba(2, 132, 199, 0.8);
+                border: 2.5px solid white;
+                font-size: 16px;
+                font-weight: bold;
+              ">⚡</div>
+              <div style="
+                background: rgba(15, 23, 42, 0.95);
+                color: #38bdf8;
+                padding: 4px 10px;
+                border-radius: 8px;
+                font-size: 11px;
+                font-weight: 800;
+                border: 2px solid #0284c7;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+                white-space: nowrap;
+                margin-top: 4px;
+                letter-spacing: -0.01em;
+              ">
+                ⚡ NODO: ${c.nearestNode.name}
+              </div>
+            </div>
+          `,
+          iconSize: [210, 70],
+          iconAnchor: [105, 17]
+        });
+
+        const nodeMarker = L.marker([c.nearestNode.lat, c.nearestNode.lng], { icon: nodeIcon });
+        nodeMarker.bindPopup(`<b>${c.nearestNode.name}</b><br>Código: ${c.nearestNode.code || 'CR-FTTH'}<br>Distancia: ${c.minNodeDist}m`);
+        certLayersGroup.addLayer(nodeMarker);
+
+        // 3. High-contrast Dashed Connection Line
+        const routeLine = L.polyline([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]], {
+          color: '#38bdf8',
+          weight: 4,
+          dashArray: '8, 8',
+          opacity: 0.95
+        });
+        certLayersGroup.addLayer(routeLine);
+
+        // 4. Central Distance Badge on the line
+        const midLat = (c.lat + c.nearestNode.lat) / 2;
+        const midLng = (c.lng + c.nearestNode.lng) / 2;
+        const distBadgeIcon = L.divIcon({
+          className: 'custom-cert-dist-badge',
+          html: `
+            <div style="
+              background: #0284c7;
+              color: #ffffff;
+              padding: 4px 12px;
+              border-radius: 14px;
+              font-size: 11px;
+              font-weight: 900;
+              white-space: nowrap;
+              box-shadow: 0 4px 14px rgba(0,0,0,0.7);
+              border: 2px solid white;
+              transform: translateY(-50%);
+            ">
+              📏 ${c.minNodeDist}m al nodo
+            </div>
+          `,
+          iconSize: [140, 26],
+          iconAnchor: [70, 13]
+        });
+        certLayersGroup.addLayer(L.marker([midLat, midLng], { icon: distBadgeIcon }));
+
+        // Auto-fit bounds including both coordinate and node with comfortable padding
+        const bounds = L.latLngBounds([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]]);
+        certMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+        certMap.invalidateSize();
+      }, 150);
+    }
+
+    function resetCertMapView() {
+      if (!certMap || !lastEvaluation) return;
+      const c = lastEvaluation;
+      const bounds = L.latLngBounds([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]]);
+      certMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+    }
+
+    function toggleCertMapLayer() {
+      if (!certMap || !certSatelliteLayer || !certStreetsLayer) return;
+      const btn = document.getElementById('btn-cert-map-layer');
+      if (certMapType === 'satellite') {
+        certMap.removeLayer(certSatelliteLayer);
+        certStreetsLayer.addTo(certMap);
+        certMapType = 'streets';
+        if (btn) btn.innerHTML = '<span>🗺️ Calles</span>';
+      } else {
+        certMap.removeLayer(certStreetsLayer);
+        certSatelliteLayer.addTo(certMap);
+        certMapType = 'satellite';
+        if (btn) btn.innerHTML = '<span>🛰️ Satélite</span>';
       }
     }
 
@@ -799,16 +1584,29 @@
       document.getElementById('cert-modal').classList.remove('flex');
     }
 
-    async function downloadCertificateImage() {
-      const certElement = document.getElementById('printable-certificate');
-      const canvas = await html2canvas(certElement, { useCORS: true, allowTaint: true, scale: 2 });
-      const link = document.createElement('a');
-      link.download = `certificado-factibilidad-fibra-${lastEvaluation.lat}-${lastEvaluation.lng}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
+    async function downloadCertificatePng() {
+      const certEl = document.getElementById('printable-certificate');
+      try {
+        const canvas = await html2canvas(certEl, {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2,
+          logging: false
+        });
+        const link = document.createElement('a');
+        link.download = `certificado-factibilidad-fibra-${lastEvaluation.lat}-${lastEvaluation.lng}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } catch (e) {
+        alert("Error al descargar la imagen del certificado.");
+      }
     }
 
-    window.onload = initMap;
+    // Initialize application on window load
+    window.addEventListener('DOMContentLoaded', () => {
+      initMap();
+      renderHistory();
+    });
   </script>
 </body>
 </html>

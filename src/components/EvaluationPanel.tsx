@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
 import { EvaluationResult, parseMapUrl } from '../utils/fiberEngine';
-import { PRESET_LOCATIONS, FiberNode, Condominium } from '../data/crData';
-import { parseKmlOrKmzFile } from '../utils/kmzParser';
-import { Navigation, Compass, Search, CheckCircle2, AlertTriangle, XCircle, Zap, ShieldCheck, Upload, Link2, Building, Layers, MapPin, Network } from 'lucide-react';
+import { PRESET_LOCATIONS } from '../data/crData';
+import { Navigation, Compass, Search, CheckCircle2, AlertTriangle, XCircle, Zap, ShieldCheck, Link2, Building, MapPin, Network, Eye, EyeOff } from 'lucide-react';
 
 interface EvaluationPanelProps {
   evaluation: EvaluationResult;
   onUpdateCoords: (lat: number, lng: number) => void;
   onOpenReportModal: () => void;
   onOpenNodesModal: () => void;
-  onCustomDataLoaded: (nodes: FiberNode[], condos: Condominium[], fileName: string) => void;
-  loadedFileName: string | null;
+  showNodes: boolean;
+  onToggleShowNodes: () => void;
 }
 
 export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
@@ -18,15 +17,14 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
   onUpdateCoords,
   onOpenReportModal,
   onOpenNodesModal,
-  onCustomDataLoaded,
-  loadedFileName,
+  showNodes,
+  onToggleShowNodes,
 }) => {
   const [latInput, setLatInput] = useState(evaluation.lat.toString());
   const [lngInput, setLngInput] = useState(evaluation.lng.toString());
   const [mapUrlInput, setMapUrlInput] = useState('');
   const [urlError, setUrlError] = useState('');
   const [selectedPreset, setSelectedPreset] = useState('');
-  const [isUploading, setIsUploading] = useState(false);
 
   React.useEffect(() => {
     setLatInput(evaluation.lat.toString());
@@ -67,22 +65,6 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsUploading(true);
-    try {
-      const result = await parseKmlOrKmzFile(file, file.name);
-      onCustomDataLoaded(result.nodes, result.condos, file.name);
-      alert(`¡Archivo ${file.name} cargado con éxito! (${result.nodes.length} nodos, ${result.condos.length} condominios).`);
-    } catch (err: any) {
-      alert(err.message || 'Error al procesar el archivo KMZ/KML.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const handleGeoLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -115,18 +97,29 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
           </button>
         </div>
 
-        {/* KMZ / KML Lazy Loaded Status Banner */}
-        <div className="bg-slate-800/70 p-3 rounded-2xl border border-slate-700/80 flex items-center justify-between">
-          <div className="flex items-center space-x-2 text-xs text-slate-300 truncate">
-            <Upload className="w-4 h-4 text-blue-400 shrink-0" />
-            <span className="truncate">
-              {loadedFileName ? `Red: ${loadedFileName}` : 'Red GAM GitHub (Caché Activa)'}
-            </span>
+        {/* Prominent Nodes Layer Visibility Toggle (OFF by default) */}
+        <div className="bg-gradient-to-r from-slate-800/90 to-slate-900/90 p-4 rounded-2xl border border-blue-500/30 shadow-lg flex items-center justify-between">
+          <div className="flex items-center space-x-3 text-xs text-slate-200">
+            <div className={`p-2 rounded-xl ${showNodes ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+              {showNodes ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+            </div>
+            <div>
+              <span className="font-bold text-sm text-white block">Visualización de Nodos en Mapa</span>
+              <span className="text-[11px] text-slate-400 block mt-0.5">
+                {showNodes ? '🟢 ACTIVA (Todos los nodos visibles)' : '🔴 APAGADA (Recomendado para búsqueda fluida)'}
+              </span>
+            </div>
           </div>
-          <label className="cursor-pointer px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium shadow-sm transition shrink-0">
-            {isUploading ? 'Procesando...' : 'Cambiar KMZ'}
-            <input type="file" accept=".kmz,.kml" onChange={handleFileUpload} className="hidden" />
-          </label>
+          <button
+            onClick={onToggleShowNodes}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shrink-0 ${
+              showNodes
+                ? 'bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-400/50'
+                : 'bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600'
+            }`}
+          >
+            {showNodes ? 'ON (Visible)' : 'OFF (Oculto)'}
+          </button>
         </div>
 
         {/* Smart Search Box (Coordinates & Waze/Google Maps links) */}
@@ -232,12 +225,17 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
               {evaluation.feasibilityLabel}
             </div>
             <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-              {evaluation.feasibility === 'FACTIBLE' && 'El punto se encuentra dentro de la huella FTTH activa. Conexión de alta velocidad garantizada.'}
-              {evaluation.feasibility === 'ESTUDIO' && 'Fuera de la huella estándar inmediata. Requiere inspección de posteo y tendido adicional (30m - 150m).'}
-              {evaluation.feasibility === 'NO_FACTIBLE' && 'La distancia al nodo más cercano supera el límite técnico estándar (> 150m). Se registra para expansión.'}
+              {evaluation.feasibilityDesc}
             </p>
           </div>
         </div>
+
+        {evaluation.condoAlert && (
+          <div className="p-3 rounded-2xl border bg-amber-500/15 border-amber-500/30 text-amber-300 text-xs flex items-start space-x-2 leading-relaxed">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+            <span>{evaluation.condoAlert}</span>
+          </div>
+        )}
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-2 gap-2 text-xs">
@@ -288,13 +286,9 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
               <span className="font-bold text-purple-200">{evaluation.nearestCondo.name} ({evaluation.condoDistanceMeters}m)</span>
             </div>
           )}
-          <div className="pt-1 flex justify-between text-[11px]">
-            <span className="text-slate-400">Velocidad Máxima:</span>
-            <span className="font-bold text-emerald-400">{evaluation.estimatedSpeed}</span>
-          </div>
         </div>
 
-        {/* Subsequent Nodes List (Nodos siguientes) */}
+        {/* Subsequent Nodes List */}
         {evaluation.subsequentNodes.length > 0 && (
           <div className="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/60 space-y-1.5 text-xs">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block flex items-center space-x-1">

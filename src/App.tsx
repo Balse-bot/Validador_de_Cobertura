@@ -7,12 +7,14 @@ import { ReportModal } from './components/ReportModal';
 import { evaluateLocation, EvaluationResult } from './utils/fiberEngine';
 import { PRESET_LOCATIONS, FIBER_NODES, CONDOMINIUMS, FiberNode, Condominium } from './data/crData';
 import { parseKmlOrKmzFile } from './utils/kmzParser';
+import { getCachedData, saveCachedData } from './utils/db';
 
 export default function App() {
   const [darkMode, setDarkMode] = useState(true);
   const [nodes, setNodes] = useState<FiberNode[]>(FIBER_NODES);
   const [condos, setCondos] = useState<Condominium[]>(CONDOMINIUMS);
   const [loadedFileName, setLoadedFileName] = useState<string | null>(null);
+  const [showNodes, setShowNodes] = useState(false); // Default to false for performance
 
   const [currentCoords, setCurrentCoords] = useState<{ lat: number; lng: number }>({
     lat: PRESET_LOCATIONS[0].lat,
@@ -34,29 +36,23 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Background caching & single-load KML/KMZ initialization
+  // IndexedDB caching & single-load KML/KMZ initialization
   useEffect(() => {
-    const cachedNodes = localStorage.getItem('cache_fiber_nodes');
-    const cachedCondos = localStorage.getItem('cache_fiber_condos');
-    const cachedFileName = localStorage.getItem('cache_fiber_filename');
-
-    if (cachedNodes && cachedCondos) {
+    async function initData() {
       try {
-        const parsedN = JSON.parse(cachedNodes);
-        const parsedC = JSON.parse(cachedCondos);
-        if (parsedN.length > 0) {
-          setNodes(parsedN);
-          setCondos(parsedC);
-          if (cachedFileName) setLoadedFileName(cachedFileName);
-          const result = evaluateLocation(currentCoords.lat, currentCoords.lng, parsedN, parsedC);
+        const cached = await getCachedData();
+        if (cached && cached.nodes.length > 0) {
+          setNodes(cached.nodes);
+          setCondos(cached.condos);
+          if (cached.fileName) setLoadedFileName(cached.fileName);
+          const result = evaluateLocation(currentCoords.lat, currentCoords.lng, cached.nodes, cached.condos);
           setEvaluation(result);
         }
       } catch (e) {
-        console.error("Error reading cached data", e);
+        console.error("Error reading IndexedDB cache", e);
       }
-    }
 
-    async function backgroundFetchKmz() {
+      // Background fetch of KMZ to ensure fresh data
       try {
         const res = await fetch('/Octubre Comercial 2026.kmz');
         if (res.ok) {
@@ -66,9 +62,7 @@ export default function App() {
             setNodes(result.nodes);
             setCondos(result.condos);
             setLoadedFileName('Octubre Comercial 2026.kmz');
-            localStorage.setItem('cache_fiber_nodes', JSON.stringify(result.nodes));
-            localStorage.setItem('cache_fiber_condos', JSON.stringify(result.condos));
-            localStorage.setItem('cache_fiber_filename', 'Octubre Comercial 2026.kmz');
+            await saveCachedData(result.nodes, result.condos, 'Octubre Comercial 2026.kmz');
 
             const resultEval = evaluateLocation(currentCoords.lat, currentCoords.lng, result.nodes, result.condos);
             setEvaluation(resultEval);
@@ -79,7 +73,7 @@ export default function App() {
       }
     }
 
-    backgroundFetchKmz();
+    initData();
   }, []);
 
   const handleUpdateCoords = (lat: number, lng: number) => {
@@ -88,13 +82,11 @@ export default function App() {
     setEvaluation(result);
   };
 
-  const handleCustomDataLoaded = (newNodes: FiberNode[], newCondos: Condominium[], fileName: string) => {
+  const handleCustomDataLoaded = async (newNodes: FiberNode[], newCondos: Condominium[], fileName: string) => {
     setNodes(newNodes);
     setCondos(newCondos);
     setLoadedFileName(fileName);
-    localStorage.setItem('cache_fiber_nodes', JSON.stringify(newNodes));
-    localStorage.setItem('cache_fiber_condos', JSON.stringify(newCondos));
-    localStorage.setItem('cache_fiber_filename', fileName);
+    await saveCachedData(newNodes, newCondos, fileName);
     const result = evaluateLocation(currentCoords.lat, currentCoords.lng, newNodes, newCondos);
     setEvaluation(result);
   };
@@ -126,8 +118,8 @@ export default function App() {
             onUpdateCoords={handleUpdateCoords}
             onOpenReportModal={() => setIsReportModalOpen(true)}
             onOpenNodesModal={() => setIsNodesModalOpen(true)}
-            onCustomDataLoaded={handleCustomDataLoaded}
-            loadedFileName={loadedFileName}
+            showNodes={showNodes}
+            onToggleShowNodes={() => setShowNodes(!showNodes)}
           />
         </div>
 
@@ -146,6 +138,7 @@ export default function App() {
               onSelectCoordinates={handleUpdateCoords}
               nodes={nodes}
               condos={condos}
+              showNodes={showNodes}
             />
           </div>
         </div>
