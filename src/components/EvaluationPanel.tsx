@@ -81,8 +81,8 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/85 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-6">
-      <div className="space-y-4">
+    <div className="bg-slate-900/85 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-4 sm:p-5 flex flex-col space-y-4">
+      <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold tracking-tight text-white flex items-center space-x-2">
             <Compass className="w-4 h-4 text-blue-400" />
@@ -98,15 +98,15 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
         </div>
 
         {/* Prominent Nodes Layer Visibility Toggle (OFF by default) */}
-        <div className="bg-gradient-to-r from-slate-800/90 to-slate-900/90 p-4 rounded-2xl border border-blue-500/30 shadow-lg flex items-center justify-between">
-          <div className="flex items-center space-x-3 text-xs text-slate-200">
-            <div className={`p-2 rounded-xl ${showNodes ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
-              {showNodes ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+        <div className="bg-gradient-to-r from-slate-800/90 to-slate-900/90 p-2.5 rounded-xl border border-blue-500/30 shadow-lg flex items-center justify-between">
+          <div className="flex items-center space-x-2.5 text-xs text-slate-200">
+            <div className={`p-1.5 rounded-lg ${showNodes ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'}`}>
+              {showNodes ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
             </div>
             <div>
-              <span className="font-bold text-sm text-white block">Visualización de Nodos en Mapa</span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
-                {showNodes ? '🟢 ACTIVA (Todos los nodos visibles)' : '🔴 APAGADA (Recomendado para búsqueda fluida)'}
+              <span className="font-bold text-xs text-white block">Visualización de Nodos en Mapa</span>
+              <span className="text-[10px] text-slate-400 block">
+                {showNodes ? '🟢 ACTIVA (Todos los nodos)' : '🔴 APAGADA (Recomendado sin lag)'}
               </span>
             </div>
           </div>
@@ -213,19 +213,22 @@ export const EvaluationPanel: React.FC<EvaluationPanelProps> = ({
           </button>
         </div>
 
-        {/* Status Badge */}
-        <div className={`p-4 rounded-2xl border ${evaluation.badgeBg} flex items-start space-x-3 shadow-inner`}>
+        {/* Status Badge (Replicating original American Data Networks style) */}
+        <div className={`p-4 rounded-2xl border ${evaluation.badgeBg} flex items-start space-x-3.5 shadow-inner`}>
           <div className="mt-0.5 shrink-0">
-            {evaluation.feasibility === 'FACTIBLE' && <CheckCircle2 className="w-5 h-5 text-emerald-400" />}
-            {evaluation.feasibility === 'ESTUDIO' && <AlertTriangle className="w-5 h-5 text-amber-400" />}
-            {evaluation.feasibility === 'NO_FACTIBLE' && <XCircle className="w-5 h-5 text-rose-400" />}
+            {evaluation.feasibility === 'FACTIBLE' && <CheckCircle2 className="w-6 h-6 text-emerald-400" />}
+            {evaluation.feasibility === 'ESTUDIO' && <AlertTriangle className="w-6 h-6 text-amber-400" />}
+            {evaluation.feasibility === 'NO_FACTIBLE' && <XCircle className="w-6 h-6 text-rose-400" />}
           </div>
-          <div>
-            <div className={`text-xs font-black tracking-tight ${evaluation.badgeColor}`}>
-              {evaluation.feasibilityLabel}
+          <div className="space-y-1">
+            <div className={`text-lg font-black tracking-tight ${evaluation.badgeColor}`}>
+              {evaluation.title}
             </div>
-            <p className="text-[11px] text-slate-300 mt-1 leading-relaxed">
-              {evaluation.feasibilityDesc}
+            <p className="text-xs text-slate-200 leading-relaxed font-medium">
+              {evaluation.subtitle}
+            </p>
+            <p className="text-[11px] text-slate-400">
+              {evaluation.nearestCondoText}
             </p>
           </div>
         </div>

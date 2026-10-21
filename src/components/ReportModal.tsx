@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { EvaluationResult } from '../utils/fiberEngine';
+import { EvaluationResult, DEFAULT_FOOTPRINTS } from '../utils/fiberEngine';
 import { X, Printer, ShieldCheck, Wifi, CheckCircle2, AlertTriangle, XCircle, Download, Layers, Crosshair } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
@@ -34,8 +34,12 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, evalu
         });
 
         const satLayer = L.tileLayer(
-          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-          { maxZoom: 19, crossOrigin: 'anonymous' }
+          'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+          {
+            attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
+            maxZoom: 19,
+            crossOrigin: 'anonymous',
+          }
         );
 
         const streetsLayer = L.tileLayer(
@@ -57,6 +61,18 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, evalu
         if (layer !== satLayerRef.current && layer !== streetsLayerRef.current) {
           map.removeLayer(layer);
         }
+      });
+
+            // Render Footprint Polygons on Certificate Map
+      DEFAULT_FOOTPRINTS.forEach((poly) => {
+        if (!poly.pts || poly.pts.length < 3) return;
+        L.polygon(poly.pts, {
+          color: '#00d4ff',
+          weight: 2.5,
+          fillColor: '#00d4ff',
+          fillOpacity: 0.22,
+          interactive: false,
+        }).addTo(map);
       });
 
       const { lat, lng, nearestNode, nodeDistanceMeters, routingEstimate, feasibility, feasibilityLabel } = evaluation;
@@ -467,6 +483,12 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, evalu
                   <span>Distancia: <b className="text-white">{evaluation.nodeDistanceMeters}m</b> ({evaluation.routingEstimate.min}m - {evaluation.routingEstimate.max}m)</span>
                 </div>
               </div>
+            </div>
+
+            {/* MANDATORY MAP NOTE UNDER CERTIFICATE MAP CONTAINER */}
+            <div className="text-[11px] text-cyan-400 font-medium flex items-center gap-1.5 px-1 pt-1">
+              <span className="w-3 h-0.5 bg-cyan-400 rounded-full inline-block"></span>
+              <span>Las líneas azules son el tendido de fibra, no área de cobertura.</span>
             </div>
           </div>
 

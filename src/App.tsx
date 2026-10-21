@@ -112,7 +112,7 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
-        <div className="w-full lg:w-[440px] shrink-0 z-20">
+        <div className="w-full lg:w-[440px] shrink-0 z-20 lg:max-h-[calc(100vh-110px)] lg:overflow-y-auto pr-1">
           <EvaluationPanel
             evaluation={evaluation}
             onUpdateCoords={handleUpdateCoords}
@@ -126,13 +126,13 @@ export default function App() {
         <div className="flex-1 flex flex-col z-10">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-xs font-medium text-slate-400">
-              🛰️ Vista Satelital Interactiva (GAM: San José, Heredia, Cartago, Alajuela)
+              🗺️ Mapa Dark Matter & Tendido de Fibra (GAM: San José, Heredia, Cartago, Alajuela)
             </span>
             <span className="text-xs font-mono bg-slate-900/80 border border-slate-800 text-blue-400 px-3 py-1 rounded-full shadow-inner">
               Lat: {evaluation.lat} • Lng: {evaluation.lng}
             </span>
           </div>
-          <div className="flex-1 w-full min-h-[500px] lg:min-h-[700px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
+          <div className="w-full">
             <MapView
               evaluation={evaluation}
               onSelectCoordinates={handleUpdateCoords}

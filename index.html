@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Validador ADN v4.11 | American Data Networks</title>
-  <meta name="description" content="Validador ADN v4.11 | American Data Networks - Sistema corporativo de validación de cobertura y factibilidad geodésica FTTH para Costa Rica (GAM)." />
+  <meta name="description" content="Validador ADN v4.11 | American Data Networks - Sistema oficial de validación de cobertura y factibilidad geodésica FTTH para Costa Rica (GAM)." />
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -50,13 +50,13 @@
     }
     .pulsing-pin { animation: pulse-ring 2s infinite ease-in-out; }
 
-    /* Custom Leaflet popup styling */
+    /* Custom Leaflet popup styling (Dark Matter) */
     .leaflet-popup-content-wrapper {
       background: #0f172a !important;
       color: #f8fafc !important;
       border-radius: 16px !important;
       border: 1px solid #334155 !important;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7) !important;
       padding: 4px !important;
     }
     .leaflet-popup-tip {
@@ -77,6 +77,21 @@
         color: black !important;
       }
       .no-print { display: none !important; }
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(59, 130, 246, 0.4);
+      border-radius: 8px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(59, 130, 246, 0.7);
     }
   </style>
 </head>
@@ -115,11 +130,11 @@
   </header>
 
   <!-- Main Split-Screen Layout -->
-  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 no-print">
+  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 no-print lg:overflow-hidden lg:h-[calc(100vh-4.5rem)]">
     
     <!-- Left Control & Evaluation Panel -->
-    <div class="w-full lg:w-[460px] shrink-0 flex flex-col space-y-6 z-20">
-      <div class="bg-slate-900/85 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-5">
+    <div class="w-full lg:w-[460px] shrink-0 flex flex-col space-y-4 z-20 lg:h-full lg:overflow-y-auto pb-10 pr-2 custom-scrollbar">
+      <div class="bg-slate-900/85 backdrop-blur-2xl rounded-2xl shadow-xl border border-slate-800 p-4 sm:p-5 flex flex-col space-y-3">
         
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-semibold tracking-tight text-white flex items-center space-x-2">
@@ -133,7 +148,7 @@
         </div>
 
         <!-- THE SINGLE PROMINENT NODES VISIBILITY TOGGLE (DEFAULT: OFF) -->
-        <div class="bg-gradient-to-r from-slate-800/90 to-slate-900/90 p-4 rounded-2xl border border-blue-500/30 shadow-lg flex items-center justify-between">
+        <div class="bg-gradient-to-r from-slate-800/90 to-slate-900/90 p-2.5 rounded-xl border border-blue-500/30 shadow-lg flex items-center justify-between">
           <div class="flex items-center space-x-3 text-xs text-slate-200">
             <div id="toggle-icon-box" class="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
               <svg id="toggle-icon-svg" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>
@@ -214,7 +229,7 @@
 
       </div>
 
-      <!-- Feasibility & Geographic Results Card -->
+      <!-- Feasibility & Geographic Results Card (REPLICA ORIGINAL AMERICAN DATA NETWORKS) -->
       <div class="bg-slate-900/85 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-4">
         
         <div class="flex items-center justify-between">
@@ -227,18 +242,24 @@
           </span>
         </div>
 
-        <!-- Feasibility Status Banner -->
-        <div id="status-card" class="p-4 rounded-2xl border bg-emerald-500/10 border-emerald-500/20 flex items-start space-x-3 transition-all duration-300 shadow-inner">
+        <!-- Feasibility Status Banner - Original American Data Style -->
+        <div id="status-card" class="p-5 rounded-2xl border bg-amber-500/10 border-amber-500/30 flex items-start space-x-3.5 transition-all duration-300 shadow-inner">
           <div id="status-icon" class="mt-0.5 shrink-0">
-            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+            <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
           </div>
-          <div class="w-full">
-            <div id="status-title" class="text-xs font-black tracking-tight text-emerald-400">
-              🟢 CON COBERTURA (Huella FTTH Activa)
+          <div class="w-full space-y-1.5">
+            <!-- Título: "Al borde" (en naranja) o "Con cobertura" (en verde) o "Sin cobertura" (en rojo) -->
+            <div id="status-title" class="text-lg font-black tracking-tight text-amber-400">
+              Al borde
             </div>
-            <p id="status-desc" class="text-[11px] text-slate-300 mt-1 leading-relaxed">
-              El punto evaluado se encuentra dentro del rango de cobertura directa del nodo.
+            <!-- Subtítulo: "Está a [X] metros de la red. Hace falta el estudio para confirmarlo." -->
+            <p id="status-desc" class="text-xs text-slate-200 leading-relaxed font-medium">
+              Está a 121 metros de la red. Hace falta el estudio para confirmarlo.
             </p>
+            <!-- Texto secundario: "Condominio más cercano: [Nombre] (a [X] m)" -->
+            <div id="status-condo-sec" class="text-[11px] text-slate-400 pt-1.5 border-t border-slate-700/60 mt-2 font-medium">
+              Condominio más cercano: Ninguno registrado en la zona inmediata
+            </div>
           </div>
         </div>
 
@@ -248,7 +269,7 @@
           <span id="condo-alert-text" class="leading-relaxed"></span>
         </div>
 
-        <!-- Metrics Grid (Perpendicular Footprint, Nearest Node, Cable & Overhead Routing Estimate) -->
+        <!-- Detailed Metrics Grid (Perpendicular Footprint, Nearest Node, Cable & Routing) -->
         <div class="grid grid-cols-2 gap-3 pt-1">
           <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Huella FTTH</span>
@@ -324,29 +345,30 @@
 
     </div>
 
-    <!-- Right Interactive Map Panel -->
+    <!-- Right Interactive Map Panel (CARTO DARK MATTER + BRIGHT BLUE CABLES) -->
     <div class="flex-1 flex flex-col z-10">
       <div class="mb-3 flex items-center justify-between">
         <span class="text-xs font-medium text-slate-400 flex items-center space-x-1.5">
-          <span>🛰️ Vista Satelital Interactiva (Haz clic en el mapa para evaluar)</span>
+          <span>🗺️ Mapa Dark Matter & Tendido de Fibra (Haz clic para evaluar)</span>
         </span>
         <span id="coords-badge" class="text-xs font-mono bg-slate-900/80 border border-slate-800 text-blue-400 px-3 py-1 rounded-full shadow-inner">
           Lat: 9.9380 • Lng: -84.1120
         </span>
       </div>
       
-      <div class="flex-1 w-full min-h-[520px] lg:min-h-[720px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800 relative flex flex-col">
+      <div class="flex-1 w-full h-[400px] lg:h-full rounded-3xl overflow-hidden shadow-2xl border border-slate-800 relative flex flex-col">
         <div id="map" class="w-full flex-1 relative z-0"></div>
 
         <!-- Map Layer Controls Toolbar -->
         <div class="absolute top-4 left-4 z-[400] bg-slate-900/90 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex flex-wrap gap-1.5">
-          <button onclick="setMapLayer('satellite')" id="btn-sat" class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition">Satélite</button>
+          <button onclick="setMapLayer('dark')" id="btn-dark" class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition">Dark Matter</button>
           <button onclick="setMapLayer('streets')" id="btn-str" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition">Calles</button>
         </div>
 
         <!-- Map Legend -->
         <div class="absolute bottom-10 left-4 z-[400] bg-slate-900/90 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-xl border border-slate-800 text-xs text-slate-300 space-y-2 hidden sm:block">
           <div class="font-bold text-white mb-1">Leyenda de Cobertura GAM</div>
+          <div class="flex items-center space-x-2"><div class="w-3.5 h-1 bg-cyan-400 rounded-full shadow-sm"></div><span>Tendido de Fibra (Líneas Azules)</span></div>
           <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-blue-500"></div><span>Nodo / Cierre Asignado (⚡)</span></div>
           <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div><span>Punto Consultado (📍)</span></div>
           <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-purple-500"></div><span>Condominio Residencial (🏢)</span></div>
@@ -355,12 +377,17 @@
           </div>
         </div>
 
-        <!-- MANDATORY MAP FOOTER: Validador ADN v4.11 | American Data Networks -->
-        <div class="bg-slate-900/95 border-t border-slate-800 py-2 px-4 flex items-center justify-between text-[11px] text-slate-400 z-10">
+        <!-- MANDATORY MAP FOOTER -->
+        <div class="bg-slate-900/95 border-t border-slate-800 py-2.5 px-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-1.5 z-10">
+          <div class="flex items-center space-x-1.5 text-cyan-400 font-semibold">
+            <span class="inline-block w-3.5 h-1 bg-cyan-400 rounded-full shadow-sm"></span>
+            <span>Las líneas azules son el tendido de fibra, no área de cobertura.</span>
+          </div>
           <span class="font-semibold text-slate-300">Validador ADN v4.11 | American Data Networks</span>
-          <span>Red Nacional de Fibra Óptica FTTH • Costa Rica</span>
         </div>
       </div>
+
+
     </div>
 
   </main>
@@ -425,7 +452,7 @@
       </div>
       
       <!-- Certificate Printable & Capturable Body (American Data Networks) -->
-      <div id="printable-certificate" class="p-8 space-y-6 overflow-y-auto flex-1 bg-slate-900 text-white font-sans">
+      <div id="printable-certificate" class="p-6 space-y-4 overflow-y-auto flex-1 bg-slate-900 text-white font-sans custom-scrollbar">
         
         <!-- Header Banner -->
         <div class="border-b border-slate-800 pb-5 flex justify-between items-start">
@@ -444,13 +471,13 @@
           </div>
         </div>
 
-        <!-- Certificate Status Banner -->
+        <!-- Certificate Status Banner (Original American Data Style) -->
         <div id="cert-status-banner" class="p-4 rounded-2xl border flex items-center space-x-3 shadow-inner">
           <div id="cert-status-icon"></div>
           <div>
             <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Dictamen Técnico de Cobertura</span>
-            <span id="cert-status-text" class="text-base font-black"></span>
-            <div id="cert-huella-detail" class="text-xs font-semibold mt-1"></div>
+            <span id="cert-status-text" class="text-lg font-black"></span>
+            <div id="cert-huella-detail" class="text-xs font-semibold mt-1 text-slate-200"></div>
           </div>
         </div>
 
@@ -461,7 +488,7 @@
         <!-- Metrics & Infrastructure Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-2">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ubicación Consultada</span>
+            <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block border-b border-slate-700/60 pb-1.5 mb-2 flex items-center gap-1.5"><span>📍</span><span>Datos de Ubicación</span></span>
             <div><b>Coordenadas:</b> <span id="cert-coords" class="font-mono text-cyan-300"></span></div>
             <div><b>Provincia / Cantón:</b> <span id="cert-prov-canton"></span></div>
             <div><b>Distrito / Barrio:</b> <span id="cert-dist-barrio"></span></div>
@@ -471,7 +498,7 @@
           </div>
 
           <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-2">
-            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Infraestructura Asignada</span>
+            <span class="text-[11px] font-bold text-blue-400 uppercase tracking-wider block border-b border-slate-700/60 pb-1.5 mb-2 flex items-center gap-1.5"><span>⚡</span><span>Detalles Técnicos de Red</span></span>
             <div><b>Huella FTTH:</b> <span id="cert-huella-metric" class="font-bold text-amber-400"></span></div>
             <div><b>Nodo / Cierre Asignado:</b> <span id="cert-node" class="font-bold text-white"></span></div>
             <div><b>Código de Cierre:</b> <span id="cert-node-code" class="font-mono text-blue-400"></span></div>
@@ -482,23 +509,20 @@
           </div>
         </div>
 
-        <!-- Dedicated Georeferenced Map View showing Coordinate & Node with high clarity -->
-        <div class="space-y-2">
+        <!-- Dedicated Georeferenced Map View (CartoDB Dark Matter with Bright Blue Lines) -->
+        <div class="space-y-1.5">
           <div class="flex items-center justify-between">
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <span>🗺️ Mapa Georreferenciado: Coordenada del Cliente y Nodo FTTH Asignado</span>
+              <span>🗺️ Mapa Georreferenciado: Coordenada del Cliente y Tendido de Fibra</span>
             </span>
             <div class="flex items-center space-x-2 print:hidden">
-              <button type="button" onclick="resetCertMapView()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition flex items-center space-x-1 shadow-sm" title="Centrar en la ruta entre coordenada y nodo">
+              <button type="button" onclick="resetCertMapView()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition flex items-center space-x-1 shadow-sm" title="Centrar en la ruta entre coordenada y red">
                 <span>🎯 Centrar Traza</span>
-              </button>
-              <button type="button" id="btn-cert-map-layer" onclick="toggleCertMapLayer()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition flex items-center space-x-1 shadow-sm" title="Cambiar capa satélite / calles">
-                <span>🛰️ Satélite</span>
               </button>
             </div>
           </div>
           
-          <div class="relative w-full h-72 sm:h-80 rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-2xl">
+          <div class="relative w-full h-60 sm:h-64 rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-2xl">
             <!-- Dedicated Leaflet Map Instance -->
             <div id="cert-map" class="w-full h-full z-0"></div>
 
@@ -510,7 +534,7 @@
               </div>
               <div class="flex items-center gap-1.5 font-bold text-white">
                 <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shrink-0 shadow-sm"></span>
-                <span class="truncate">⚡ Nodo: <span id="cert-map-legend-node" class="text-blue-300"></span></span>
+                <span class="truncate">⚡ Red: <span id="cert-map-legend-node" class="text-blue-300"></span></span>
               </div>
               <div class="flex items-center gap-1.5 text-slate-300 pt-0.5 border-t border-slate-800">
                 <span class="text-cyan-400">📏</span>
@@ -521,12 +545,18 @@
               </div>
             </div>
           </div>
+
+          <!-- MANDATORY MAP NOTE UNDER CERTIFICATE MAP CONTAINER -->
+          <div class="text-[11px] text-cyan-400 font-medium flex items-center gap-1.5 px-1 pt-1">
+            <span class="w-3 h-0.5 bg-cyan-400 rounded-full inline-block"></span>
+            <span>Las líneas azules son el tendido de fibra, no área de cobertura.</span>
+          </div>
         </div>
 
         <!-- Certificate Formal Footer Note -->
         <div class="text-[11px] text-slate-400 pt-3 border-t border-slate-800 space-y-1">
           <p>
-            <b>Nota técnica:</b> Este certificado valida la factibilidad de conexión mediante el motor geodésico perpendicular de American Data Networks (fórmula geodésica de Haversine y proyección ortogonal sobre aristas de polígonos/tendidos FTTH) y el inventario georreferenciado de la Gran Área Metropolitana (GAM). Todo servicio queda sujeto a inspección visual de posteo y disponibilidad de puertos en caja de empalme.
+            <b>Nota técnica:</b> Este certificado valida la factibilidad de conexión mediante el motor geodésico de American Data Networks (fórmula geodésica de Haversine y proyección ortogonal sobre aristas de tendidos FTTH) y el inventario georreferenciado de la Gran Área Metropolitana (GAM). Distancias de 30m a 400m son clasificadas en estudio preliminar sujetas a inspección visual de posteo y disponibilidad de puertos en caja de empalme.
           </p>
           <p class="text-center pt-2 font-semibold text-slate-300">
             Validador ADN v4.11 | American Data Networks • Red Nacional FTTH
@@ -564,10 +594,78 @@
           [10.01719888, -84.21633160],
           [10.01669518, -84.21619200]
         ]
+      },
+      {
+        id: "CABLE-SJO-01",
+        name: "Tendido Troncal Sabana FO",
+        pts: [
+          [9.9370, -84.1130],
+          [9.9380, -84.1120],
+          [9.9390, -84.1105]
+        ]
       }
     ];
 
-    let footprintPolygons = [];
+        const DEFAULT_FOOTPRINTS = [
+      {
+        id: "HUELLA-ALA-01",
+        name: "Huella FTTH Alajuela - A03",
+        pts: [
+          [10.019500, -84.215976],
+          [10.016500, -84.215976],
+          [10.016000, -84.214000],
+          [10.018500, -84.213200],
+          [10.020200, -84.214500],
+          [10.019500, -84.215976]
+        ]
+      },
+      {
+        id: "HUELLA-SJ-01",
+        name: "Huella FTTH San José - Sabana y Rohrmoser",
+        pts: [
+          [9.9450, -84.1250],
+          [9.9410, -84.1080],
+          [9.9320, -84.1060],
+          [9.9340, -84.1240],
+          [9.9450, -84.1250]
+        ]
+      },
+      {
+        id: "HUELLA-SJ-02",
+        name: "Huella FTTH San Pedro - Los Yoses",
+        pts: [
+          [9.9340, -84.0620],
+          [9.9320, -84.0480],
+          [9.9240, -84.0490],
+          [9.9250, -84.0630],
+          [9.9340, -84.0620]
+        ]
+      },
+      {
+        id: "HUELLA-HER-01",
+        name: "Huella FTTH Heredia Centro",
+        pts: [
+          [10.0050, -84.1240],
+          [10.0030, -84.1100],
+          [9.9920, -84.1110],
+          [9.9930, -84.1250],
+          [10.0050, -84.1240]
+        ]
+      },
+      {
+        id: "HUELLA-ESC-01",
+        name: "Huella FTTH Escazú - Guachipelín",
+        pts: [
+          [9.9480, -84.1550],
+          [9.9420, -84.1350],
+          [9.9310, -84.1370],
+          [9.9330, -84.1560],
+          [9.9480, -84.1550]
+        ]
+      }
+    ];
+
+    let footprintPolygons = [...DEFAULT_FOOTPRINTS];
 
     let condominiums = [
       { id: "CONDO-01", name: "Condominio Torres del Parque", province: "San José", canton: "San José", lat: 9.9385, lng: -84.1115 },
@@ -576,25 +674,24 @@
     ];
 
     // State Variables
-    let currentLat = 9.9380;
-    let currentLng = -84.1120;
+    let currentLat = 10.018194;
+    let currentLng = -84.216833;
     let showNodes = false; // Default OFF for maximum performance
     let lastEvaluation = null;
 
     // Leaflet Variables
     let map = null;
-    let satelliteLayer = null;
+    let darkMatterLayer = null;
     let streetsLayer = null;
     let currentBaseLayer = null;
     let markersLayer = null;
+    let cablesLayer = null;
     let connectionsLayer = null;
 
     // Dedicated Certificate Map Variables
     let certMap = null;
-    let certSatelliteLayer = null;
-    let certStreetsLayer = null;
+    let certDarkLayer = null;
     let certLayersGroup = null;
-    let certMapType = 'satellite';
 
     // IndexedDB Setup for fast persistence of thousands of points
     const DB_NAME = 'ValidadorADN_DB';
@@ -739,6 +836,69 @@
       return minDist;
     }
 
+    
+    // Dedicated parser for huella_de_red.kml official polygons
+    function parseKmlPolygons(kmlText) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(kmlText, 'text/xml');
+      const polygonElements = xmlDoc.getElementsByTagName('Polygon');
+      const parsed = [];
+
+      for (let i = 0; i < polygonElements.length; i++) {
+        const polyEl = polygonElements[i];
+        let parent = polyEl.parentElement;
+        while (parent && parent.tagName !== 'Placemark' && parent !== xmlDoc.documentElement) {
+          parent = parent.parentElement;
+        }
+        const nameEl = parent ? parent.getElementsByTagName('name')[0] : null;
+        const name = nameEl ? nameEl.textContent.trim() : ('Huella FTTH ' + (i + 1));
+
+        const outerEl = polyEl.getElementsByTagName('outerBoundaryIs')[0] || polyEl;
+        const coordEl = outerEl.getElementsByTagName('coordinates')[0];
+        if (coordEl && coordEl.textContent.trim()) {
+          const tuples = coordEl.textContent.trim().split(/\s+/);
+          const pts = [];
+          for (let t = 0; t < tuples.length; t++) {
+            const parts = tuples[t].split(',');
+            if (parts.length >= 2) {
+              const lng = parseFloat(parts[0]);
+              const lat = parseFloat(parts[1]);
+              if (!isNaN(lat) && !isNaN(lng)) {
+                pts.push([lat, lng]);
+              }
+            }
+          }
+          if (pts.length >= 3) {
+            parsed.push({ id: 'HUELLA-' + (i + 1), name: name, pts: pts });
+          }
+        }
+      }
+      return parsed;
+    }
+
+    // Companion parser for huella_de_red.geojson
+    function parseGeoJsonPolygons(geojson) {
+      const parsed = [];
+      const features = geojson.features || (geojson.type === 'Feature' ? [geojson] : []);
+      features.forEach((feat, idx) => {
+        const geom = feat.geometry;
+        if (!geom) return;
+        const name = (feat.properties && feat.properties.name) ? feat.properties.name : ('Huella FTTH ' + (idx + 1));
+        if (geom.type === 'Polygon' && geom.coordinates && geom.coordinates[0]) {
+          const pts = geom.coordinates[0].map(coord => [coord[1], coord[0]]);
+          if (pts.length >= 3) parsed.push({ id: 'HUELLA-GEO-' + (idx + 1), name: name, pts: pts });
+        } else if (geom.type === 'MultiPolygon' && geom.coordinates) {
+          geom.coordinates.forEach((polyCoords, pIdx) => {
+            if (polyCoords[0]) {
+              const pts = polyCoords[0].map(coord => [coord[1], coord[0]]);
+              if (pts.length >= 3) parsed.push({ id: 'HUELLA-GEO-' + (idx + 1) + '-' + (pIdx + 1), name: (name + ' (Parte ' + (pIdx + 1) + ')'), pts: pts });
+            }
+          });
+        }
+      });
+      return parsed;
+    }
+
     // Comprehensive KML/KMZ Parser: Placemarks, Points, LineStrings, Polygons
     function parseKmlDocument(kmlText, sourceName) {
       const parser = new DOMParser();
@@ -856,15 +1016,75 @@
 
       if (parsedNodes.length > 0) fiberNodes = parsedNodes;
       if (parsedCables.length > 0) fiberCables = parsedCables;
-      if (parsedPolygons.length > 0) footprintPolygons = parsedPolygons;
+      if (parsedPolygons.length > 0) {
+        const parsedIds = new Set(parsedPolygons.map(p => p.name));
+        const preservedOfficial = footprintPolygons.filter(p => !parsedIds.has(p.name));
+        footprintPolygons = [...preservedOfficial, ...parsedPolygons];
+      }
       if (parsedCondos.length > 0) condominiums = parsedCondos;
 
       updateNodesCounterUI(sourceName);
       saveToIndexedDB(fiberNodes, fiberCables, footprintPolygons, condominiums, sourceName);
+      renderMapLayers();
+    }
+
+        // Official Footprint Loader: Reads huella_de_red.kml directly from root directory
+    async function loadHuellaDeRed() {
+      const candidates = [
+        'huella_de_red.kml',
+        './huella_de_red.kml',
+        '/huella_de_red.kml',
+        'huella_de_red.geojson',
+        './huella_de_red.geojson',
+        '/huella_de_red.geojson'
+      ];
+
+      for (const url of candidates) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            if (url.endsWith('.geojson')) {
+              const geojson = await res.json();
+              const parsed = parseGeoJsonPolygons(geojson);
+              if (parsed.length > 0) {
+                footprintPolygons = [...parsed, ...footprintPolygons.filter(p => !parsed.some(o => o.name === p.name))];
+                console.log(`[Huella FTTH] ${parsed.length} polígonos oficiales cargados desde ${url}`);
+                updateFootprintBadgeUI(url, parsed.length);
+                renderMapLayers();
+                return true;
+              }
+            } else {
+              const kmlText = await res.text();
+              const parsed = parseKmlPolygons(kmlText);
+              if (parsed.length > 0) {
+                footprintPolygons = [...parsed, ...footprintPolygons.filter(p => !parsed.some(o => o.name === p.name))];
+                console.log(`[Huella FTTH] ${parsed.length} polígonos oficiales cargados desde ${url}`);
+                updateFootprintBadgeUI(url, parsed.length);
+                renderMapLayers();
+                return true;
+              }
+            }
+          }
+        } catch (e) {
+          // Continue to next candidate
+        }
+      }
+      return false;
+    }
+
+    function updateFootprintBadgeUI(url, count) {
+      const badge = document.getElementById('datasource-badge');
+      if (badge) {
+        badge.innerText = `Huella FTTH: ${count} Polígonos (${url}) 🇨🇷`;
+        badge.className = "hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 whitespace-nowrap";
+      }
     }
 
     async function loadBackgroundKmz() {
-      // Step 1: Check IndexedDB Cache
+      // Step 1: Load Official Footprint (huella_de_red.kml)
+      await loadHuellaDeRed();
+
+      // Step 2: Check IndexedDB Cache
       const cached = await loadFromIndexedDB();
       if (cached && cached.nodes.length > 0) {
         fiberNodes = cached.nodes;
@@ -901,6 +1121,9 @@
           // Continue to next candidate
         }
       }
+
+      // Ensure official huella_de_red.kml footprints are always merged and active
+      await loadHuellaDeRed();
 
       updateNodesCounterUI();
       evaluateCoordinates(currentLat, currentLng, 'Punto Inicial');
@@ -947,14 +1170,16 @@
       renderMapLayers();
     }
 
-    // Initialize Leaflet Map
+    // Initialize Leaflet Map (CARTO DARK MATTER DEFAULT)
     function initMap() {
       map = L.map('map', { zoomControl: false }).setView([currentLat, currentLng], 15);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Tiles &copy; Esri &mdash; Costa Rica GAM',
-        maxZoom: 19
+      // CartoDB Dark Matter tile layer (Dark Mode)
+      darkMatterLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
       });
 
       streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -962,16 +1187,17 @@
         maxZoom: 19
       });
 
-      satelliteLayer.addTo(map);
-      currentBaseLayer = satelliteLayer;
+      darkMatterLayer.addTo(map);
+      currentBaseLayer = darkMatterLayer;
 
+      cablesLayer = L.layerGroup().addTo(map);
       markersLayer = L.layerGroup().addTo(map);
       connectionsLayer = L.layerGroup().addTo(map);
 
       map.on('click', function(e) {
         const lat = Number(e.latlng.lat.toFixed(5));
         const lng = Number(e.latlng.lng.toFixed(5));
-        evaluateCoordinates(lat, lng, 'Clic en Mapa Satelital');
+        evaluateCoordinates(lat, lng, 'Clic en Mapa');
       });
 
       map.on('moveend', function() {
@@ -983,18 +1209,18 @@
     }
 
     function setMapLayer(type) {
-      if (type === 'satellite' && currentBaseLayer !== satelliteLayer) {
+      if (type === 'dark' && currentBaseLayer !== darkMatterLayer) {
         map.removeLayer(currentBaseLayer);
-        satelliteLayer.addTo(map);
-        currentBaseLayer = satelliteLayer;
-        document.getElementById('btn-sat').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition";
+        darkMatterLayer.addTo(map);
+        currentBaseLayer = darkMatterLayer;
+        document.getElementById('btn-dark').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition";
         document.getElementById('btn-str').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition";
       } else if (type === 'streets' && currentBaseLayer !== streetsLayer) {
         map.removeLayer(currentBaseLayer);
         streetsLayer.addTo(map);
         currentBaseLayer = streetsLayer;
         document.getElementById('btn-str').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition";
-        document.getElementById('btn-sat').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition";
+        document.getElementById('btn-dark').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition";
       }
     }
 
@@ -1032,7 +1258,10 @@
     }
 
     // UNIFIED ADVANCED GEODESIC EVALUATION ENGINE (AMERICAN DATA NETWORKS)
-    // Calculates exact perpendicular distances to polygon edges and fiber cable spans
+    // Reglas de Factibilidad:
+    // <= 30m: "Con cobertura" (Verde)
+    // 30m a 400m: "Al borde" (Naranja) -> "Está a [X] metros de la red. Hace falta el estudio para confirmarlo."
+    // > 400m: "Sin cobertura" (Rojo)
     function evaluateCoordinates(lat, lng, sourceName = '') {
       currentLat = lat;
       currentLng = lng;
@@ -1067,7 +1296,6 @@
       }
 
       // 3. Calculate distance to FTTH Footprint Polygon (Huella FTTH)
-      // Iterates through all polygon boundary segments [A, B] and computes orthogonal projection
       let isInsidePolygon = false;
       let minPolyEdgeDist = Infinity;
       let closestPoly = null;
@@ -1126,32 +1354,46 @@
         condoAlert = `⚠️ Advertencia Operativa: El cierre más próximo se encuentra en el condominio o residencial privado "${cName}". Debe confirmarse si la red interna cuenta con servidumbre o acceso a calle pública.`;
       }
 
-      // Feasibility Classification
+      // 5. MOTOR LÓGICO OFICIAL DE FACTIBILIDAD Y DISTANCIA AL BORDE (AMERICAN DATA NETWORKS)
+      // Si está adentro: distancia = 0m. Si está afuera: distancia perpendicular exacta al borde del polígono más cercano
+      const distanceToNet = isInsidePolygon 
+        ? 0 
+        : (minPolyEdgeDist !== Infinity ? Math.round(minPolyEdgeDist) : Math.min(minCableDist, minNodeDist));
+
+      huellaDist = isInsidePolygon ? 0 : distanceToNet;
+
       let feasibility = 'NO_FACTIBLE';
-      let label = '🔴 SIN COBERTURA (Registrar para Expansión)';
-      let huellaBadge = '🔴';
-      let desc = `Huella FTTH → afuera, a ${huellaDist} m del borde 🔴. Nodo más cercano "${nearestNode.name} → ${minNodeDist} m", tendido a ${minCableDist} m.`;
-      let badgeClass = 'bg-rose-500/10 border-rose-500/20 text-rose-400';
-      let iconSvg = '<svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
+      let title = 'Sin cobertura';
+      let subtitle = `Está a ${distanceToNet} metros de la red. Excede el rango de cobertura estándar (máx. 400m).`;
+      let badgeClass = 'bg-rose-500/10 border-rose-500/30 text-rose-400';
+      let titleColor = 'text-rose-400';
+      let iconSvg = '<svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
       let installTime = 'Requiere proyecto de expansión de red';
 
-      if (huellaStatus === 'adentro' || minNodeDist <= 20) {
+      if (isInsidePolygon || distanceToNet <= 0) {
+        // DENTRO DE LA HUELLA -> CON COBERTURA (Verde)
         feasibility = 'FACTIBLE';
-        label = '🟢 CON COBERTURA (Huella FTTH Activa)';
-        huellaBadge = '🟢';
-        desc = `Huella FTTH → adentro, a 0 m del borde 🟢. Conexión directa disponible al nodo "${nearestNode.name} → ${minNodeDist} m".`;
-        badgeClass = 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
-        iconSvg = '<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+        title = 'Con cobertura';
+        subtitle = `Está dentro de la huella de red oficial. Conexión directa disponible.`;
+        badgeClass = 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+        titleColor = 'text-emerald-400';
+        iconSvg = '<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
         installTime = '24 a 48 horas hábiles';
-      } else if (huellaDist <= 150 || minNodeDist <= 150 || minCableDist <= 150) {
+      } else if (distanceToNet <= 400) {
+        // FUERA, DE 1m A 400m -> AL BORDE (Naranja/Ámbar)
         feasibility = 'ESTUDIO';
-        label = '🟠 AL BORDE DEL RANGO (Estudio de Factibilidad)';
-        huellaBadge = '🟠';
-        desc = `Huella FTTH → afuera, a ${huellaDist} m del borde 🟠. Nodo más cercano "${nearestNode.name} → ${minNodeDist} m", tendido a ${minCableDist} m. Requiere inspección de posteo.`;
-        badgeClass = 'bg-amber-500/10 border-amber-500/20 text-amber-400';
-        iconSvg = '<svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
+        title = 'Al borde';
+        subtitle = `Está a ${distanceToNet} metros de la red. Hace falta el estudio para confirmarlo.`;
+        badgeClass = 'bg-amber-500/10 border-amber-500/30 text-amber-400';
+        titleColor = 'text-amber-400';
+        iconSvg = '<svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
         installTime = '3 a 5 días hábiles (Inspección en campo)';
       }
+
+      // Texto secundario de condominio más cercano
+      const condoSecText = nearestCondo 
+        ? `Condominio más cercano: ${nearestCondo.name} (a ${minCondoDist} m)` 
+        : `Condominio más cercano: Ninguno registrado en la zona inmediata`;
 
       // Estimate overhead cable routing (~210 – 280 m for 175m)
       const routingMin = Math.round(minNodeDist * 1.2);
@@ -1162,23 +1404,30 @@
 
       lastEvaluation = {
         lat, lng, nearestNode, minNodeDist, subsequentNodes,
-        minCableDist, nearestCable,
-        huellaStatus, huellaDist, huellaBadge,
-        nearestCondo, minCondoDist, condoAlert,
-        feasibility, label, desc, badgeClass, iconSvg, installTime,
+        minCableDist, nearestCable, distanceToNet,
+        huellaStatus, huellaDist,
+        nearestCondo, minCondoDist, condoSecText, condoAlert,
+        feasibility, title, subtitle, badgeClass, titleColor, iconSvg, installTime,
         routingMin, routingMax, geo, colloquial
       };
 
       // Save to recent search history
       saveToHistory(lat, lng, sourceName || nearestNode.name, feasibility);
 
-      // Update Panel UI Elements
+      // Update Panel UI Elements (Original American Data Networks Style)
       const statusCard = document.getElementById('status-card');
-      statusCard.className = `p-4 rounded-2xl border ${badgeClass} flex items-start space-x-3 transition-all duration-300 shadow-inner`;
+      statusCard.className = `p-5 rounded-2xl border ${badgeClass} flex items-start space-x-3.5 transition-all duration-300 shadow-inner`;
       document.getElementById('status-icon').innerHTML = iconSvg;
-      document.getElementById('status-title').className = `text-xs font-black tracking-tight ${feasibility === 'FACTIBLE' ? 'text-emerald-400' : feasibility === 'ESTUDIO' ? 'text-amber-400' : 'text-rose-400'}`;
-      document.getElementById('status-title').innerText = label;
-      document.getElementById('status-desc').innerText = desc;
+      
+      const titleEl = document.getElementById('status-title');
+      titleEl.className = `text-lg font-black tracking-tight ${titleColor}`;
+      titleEl.innerText = title;
+
+      const descEl = document.getElementById('status-desc');
+      descEl.innerText = subtitle;
+
+      const condoSecEl = document.getElementById('status-condo-sec');
+      condoSecEl.innerText = condoSecText;
 
       // Update Condo Alert Box
       const alertBox = document.getElementById('condo-alert-box');
@@ -1189,7 +1438,8 @@
         alertBox.classList.add('hidden');
       }
 
-      // Specific metrics requested
+      // Detailed metrics
+      const huellaBadge = feasibility === 'FACTIBLE' ? '🟢' : feasibility === 'ESTUDIO' ? '🟠' : '🔴';
       const huellaStr = huellaStatus === 'adentro' 
         ? `adentro (0 m del borde) 🟢` 
         : `afuera, a ${huellaDist} m del borde ${huellaBadge}`;
@@ -1234,16 +1484,48 @@
       map.setView([lat, lng], 15, { animate: true });
     }
 
-    // Render Map Layers: Evaluated Point, Connection Line, and Nodes if showNodes === true
+    // Render Map Layers: Cables in Bright Blue with Defined Border, Evaluated Point, Connection Line, and Nodes if showNodes === true
     function renderMapLayers() {
-      if (!map || !markersLayer || !connectionsLayer || !lastEvaluation) return;
+      if (!map || !markersLayer || !connectionsLayer || !cablesLayer || !lastEvaluation) return;
 
       markersLayer.clearLayers();
       connectionsLayer.clearLayers();
+      cablesLayer.clearLayers();
 
-      const { lat, lng, nearestNode, minNodeDist, feasibility } = lastEvaluation;
+      const { lat, lng, nearestNode, minNodeDist, minCableDist, distanceToNet, feasibility } = lastEvaluation;
 
-      // 1. If showNodes is ON, render network nodes and condominiums within current map viewport
+      // 1. RENDER KML FIBER CABLES IN BRIGHT BLUE WITH DEFINED BORDER (CARTO DARK MATTER)
+      fiberCables.forEach(cable => {
+        if (!cable.pts || cable.pts.length < 2) return;
+        // Defined border (dark background line)
+        L.polyline(cable.pts, {
+          color: '#081a2e',
+          weight: 4.5,
+          opacity: 0.9,
+          interactive: false
+        }).addTo(cablesLayer);
+        // Bright electric blue foreground line
+        L.polyline(cable.pts, {
+          color: '#00d4ff',
+          weight: 2.2,
+          opacity: 0.95,
+          interactive: false
+        }).addTo(cablesLayer);
+      });
+
+      // Render Polygons in bright blue with defined border
+      footprintPolygons.forEach(poly => {
+        if (!poly.pts || poly.pts.length < 3) return;
+        L.polygon(poly.pts, {
+          color: '#00d4ff',
+          weight: 2,
+          fillColor: '#0284c7',
+          fillOpacity: 0.15,
+          interactive: false
+        }).addTo(cablesLayer);
+      });
+
+      // 2. If showNodes is ON, render network nodes and condominiums within current map viewport
       if (showNodes) {
         const bounds = map.getBounds().pad(0.25);
         const visibleNodes = fiberNodes.filter(node => bounds.contains([node.lat, node.lng])).slice(0, 350);
@@ -1253,7 +1535,7 @@
           const isNearest = node.id === nearestNode.id;
           const icon = L.divIcon({
             className: 'custom-node-icon',
-            html: `<div style="background-color: ${isNearest ? '#2563eb' : '#10b981'}; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.5); border: 2px solid white; font-size: 13px; font-weight: bold;">⚡</div>`,
+            html: `<div style="background-color: ${isNearest ? '#2563eb' : '#10b981'}; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.7); border: 2px solid white; font-size: 13px; font-weight: bold;">⚡</div>`,
             iconSize: [28, 28],
             iconAnchor: [14, 14]
           });
@@ -1271,7 +1553,7 @@
         visibleCondos.forEach(condo => {
           const icon = L.divIcon({
             className: 'custom-condo-icon',
-            html: `<div style="background-color: #8b5cf6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.4); border: 2px solid white; font-size: 11px;">🏢</div>`,
+            html: `<div style="background-color: #8b5cf6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.5); border: 2px solid white; font-size: 11px;">🏢</div>`,
             iconSize: [24, 24],
             iconAnchor: [12, 12]
           });
@@ -1288,7 +1570,7 @@
         // When showNodes is OFF, at least render the single target node marker so connection is crystal clear
         const nearestIcon = L.divIcon({
           className: 'custom-nearest-node-icon',
-          html: `<div style="background-color: #2563eb; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.6); border: 2px solid white; font-size: 15px; font-weight: bold;">⚡</div>`,
+          html: `<div style="background-color: #2563eb; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.8); border: 2px solid white; font-size: 15px; font-weight: bold;">⚡</div>`,
           iconSize: [32, 32],
           iconAnchor: [16, 16]
         });
@@ -1297,24 +1579,24 @@
         markersLayer.addLayer(nearestMarker);
       }
 
-      // 2. Evaluated Location Pin (Always Rendered with Pulsing Halo)
+      // 3. Evaluated Location Pin (Always Rendered with Pulsing Halo)
       const colorHex = feasibility === 'FACTIBLE' ? '#10b981' : feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
       const evalIcon = L.divIcon({
         className: 'custom-eval-icon',
         html: `
           <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
             <div class="pulsing-pin" style="position: absolute; width: 42px; height: 42px; border-radius: 50%; background-color: ${colorHex}; opacity: 0.5;"></div>
-            <div style="background-color: ${colorHex}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 2px solid white; font-size: 15px; z-index: 10;">📍</div>
+            <div style="background-color: ${colorHex}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.7); border: 2px solid white; font-size: 15px; z-index: 10;">📍</div>
           </div>
         `,
         iconSize: [40, 40],
         iconAnchor: [20, 20]
       });
       const evalMarker = L.marker([lat, lng], { icon: evalIcon });
-      evalMarker.bindPopup(`<b>Punto Evaluado</b><br>Lat: ${lat}, Lng: ${lng}<br><b>Estado:</b> ${feasibility}`);
+      evalMarker.bindPopup(`<b>Punto Evaluado</b><br>Lat: ${lat}, Lng: ${lng}<br><b>Estado:</b> ${lastEvaluation.title}`);
       markersLayer.addLayer(evalMarker);
 
-      // 3. Dashed Animated Fiber Connection Line
+      // 4. Dashed Fiber Connection Line to Nearest Node / Network
       const polyline = L.polyline([[lat, lng], [nearestNode.lat, nearestNode.lng]], {
         color: colorHex,
         weight: 3.5,
@@ -1323,14 +1605,14 @@
       });
       connectionsLayer.addLayer(polyline);
 
-      // 4. Distance Badge Pill over line midpoint
+      // 5. Distance Badge Pill over line midpoint
       const midLat = (lat + nearestNode.lat) / 2;
       const midLng = (lng + nearestNode.lng) / 2;
       const badgeIcon = L.divIcon({
         className: 'custom-dist-badge',
         html: `
-          <div style="background: #0f172a; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.3);">
-            ⚡ ${minNodeDist} m al nodo
+          <div style="background: #0f172a; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.3);">
+            ⚡ ${distanceToNet} m a la red
           </div>
         `,
         iconSize: [110, 26],
@@ -1531,13 +1813,17 @@
       const banner = document.getElementById('cert-status-banner');
       banner.className = `p-4 rounded-2xl border flex items-center space-x-3 ${c.badgeClass}`;
       document.getElementById('cert-status-icon').innerHTML = c.iconSvg;
-      document.getElementById('cert-status-text').className = `text-base font-black ${c.feasibility === 'FACTIBLE' ? 'text-emerald-400' : c.feasibility === 'ESTUDIO' ? 'text-amber-400' : 'text-rose-400'}`;
-      document.getElementById('cert-status-text').innerText = c.label;
+      
+      const statusText = document.getElementById('cert-status-text');
+      statusText.className = `text-lg font-black ${c.titleColor}`;
+      statusText.innerText = c.title;
 
+      document.getElementById('cert-huella-detail').innerText = `${c.subtitle} • ${c.condoSecText}`;
+
+      const huellaBadge = c.feasibility === 'FACTIBLE' ? '🟢' : c.feasibility === 'ESTUDIO' ? '🟠' : '🔴';
       const huellaReport = c.huellaStatus === 'adentro'
         ? 'Huella FTTH → adentro (0 m del borde) 🟢'
-        : `Huella FTTH → afuera, a ${c.huellaDist} m del borde ${c.huellaBadge}`;
-      document.getElementById('cert-huella-detail').innerText = c.desc;
+        : `Huella FTTH → afuera, a ${c.huellaDist} m del borde ${huellaBadge}`;
       document.getElementById('cert-huella-metric').innerText = huellaReport;
 
       const certCondoAlert = document.getElementById('cert-condo-alert');
@@ -1579,11 +1865,11 @@
       }
       document.getElementById('cert-map-legend-coords').innerText = `${c.lat}, ${c.lng}`;
       document.getElementById('cert-map-legend-node').innerText = `${c.nearestNode.name}`;
-      document.getElementById('cert-map-legend-dist').innerText = `${c.minNodeDist}m`;
+      document.getElementById('cert-map-legend-dist').innerText = `${c.distanceToNet}m a la red`;
       document.getElementById('cert-map-legend-routing').innerText = `~${c.routingMin} – ${c.routingMax}m`;
       document.getElementById('cert-map-legend-huella').innerText = `📏 Huella FTTH: ${huellaReport}`;
 
-      // Initialize or update the dedicated Certificate Leaflet Map
+      // Initialize or update the dedicated Certificate Leaflet Map (CARTO DARK MATTER)
       setTimeout(() => {
         const certMapEl = document.getElementById('cert-map');
         if (!certMapEl) return;
@@ -1595,118 +1881,111 @@
             scrollWheelZoom: false
           });
 
-          certSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          certDarkLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{x}/{y}', {
+            minZoom: 1,
+            maxNativeZoom: 16,
             maxZoom: 19,
-            crossOrigin: 'anonymous'
+            crossOrigin: 'anonymous',
+            attribution: '&copy; Esri &copy; OpenStreetMap'
           });
 
-          certStreetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            crossOrigin: 'anonymous'
-          });
-
-          certSatelliteLayer.addTo(certMap);
+          certDarkLayer.addTo(certMap);
           certLayersGroup = L.layerGroup().addTo(certMap);
         }
 
         certLayersGroup.clearLayers();
 
+        // Render Footprint Polygons on Certificate Map (CartoDB Dark Matter with bright cyan border)
+        footprintPolygons.forEach(poly => {
+          if (!poly.pts || poly.pts.length < 3) return;
+          L.polygon(poly.pts, {
+            color: '#00d4ff',
+            weight: 2.5,
+            fillColor: '#00d4ff',
+            fillOpacity: 0.22,
+            interactive: false
+          }).addTo(certLayersGroup);
+        });
+
+        // Render KML fiber cables on certMap in bright blue with defined border
+        fiberCables.forEach(cable => {
+          if (!cable.pts || cable.pts.length < 2) return;
+          L.polyline(cable.pts, {
+            color: '#081a2e',
+            weight: 4.5,
+            opacity: 0.9,
+            interactive: false
+          }).addTo(certLayersGroup);
+          L.polyline(cable.pts, {
+            color: '#00d4ff',
+            weight: 2.2,
+            opacity: 0.95,
+            interactive: false
+          }).addTo(certLayersGroup);
+        });
+
         const statusColor = c.feasibility === 'FACTIBLE' ? '#10b981' : c.feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
 
-        // 1. Evaluated Coordinate Marker (Client) with badge positioned ABOVE icon
+        // 1. Evaluated Coordinate Marker (Client)
         const clientIcon = L.divIcon({
           className: 'custom-cert-client-icon',
           html: `
-            <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+            <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
               <div style="
-                background: rgba(15, 23, 42, 0.95);
-                color: #ffffff;
-                padding: 4px 10px;
-                border-radius: 8px;
-                font-size: 11px;
-                font-weight: 800;
-                border: 2px solid ${statusColor};
-                box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-                white-space: nowrap;
-                margin-bottom: 4px;
-                letter-spacing: -0.01em;
-              ">
-                📍 CLIENTE (${c.lat.toFixed(4)}, ${c.lng.toFixed(4)})
-              </div>
-              <div style="position: relative; width: 38px; height: 38px; display: flex; align-items: center; justify-content: center;">
-                <div style="
-                  position: absolute;
-                  width: 38px;
-                  height: 38px;
-                  border-radius: 50%;
-                  background-color: ${statusColor};
-                  opacity: 0.45;
-                  animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-                "></div>
-                <div style="
-                  background-color: ${statusColor};
-                  color: white;
-                  width: 30px;
-                  height: 30px;
-                  border-radius: 50%;
-                  display: flex;
-                  align-items: center;
-                  justify-content: center;
-                  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-                  border: 2.5px solid white;
-                  font-size: 14px;
-                  font-weight: bold;
-                  z-index: 10;
-                ">📍</div>
-              </div>
-            </div>
-          `,
-          iconSize: [180, 70],
-          iconAnchor: [90, 70]
-        });
-
-        const clientMarker = L.marker([c.lat, c.lng], { icon: clientIcon });
-        clientMarker.bindPopup(`<b>Punto Evaluado</b><br>Coordenadas: ${c.lat}, ${c.lng}<br>Estado: <b>${c.label}</b>`);
-        certLayersGroup.addLayer(clientMarker);
-
-        // 2. Assigned Fiber Node Marker with badge label positioned BELOW icon
-        const nodeIcon = L.divIcon({
-          className: 'custom-cert-node-icon',
-          html: `
-            <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+                position: absolute;
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                background-color: ${statusColor};
+                opacity: 0.45;
+                animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+              "></div>
               <div style="
-                background: linear-gradient(135deg, #0284c7, #2563eb);
+                background-color: ${statusColor};
                 color: white;
-                width: 34px;
-                height: 34px;
+                width: 30px;
+                height: 30px;
                 border-radius: 50%;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                box-shadow: 0 4px 16px rgba(2, 132, 199, 0.8);
+                box-shadow: 0 4px 14px rgba(0,0,0,0.7);
                 border: 2.5px solid white;
-                font-size: 16px;
+                font-size: 14px;
                 font-weight: bold;
-              ">⚡</div>
-              <div style="
-                background: rgba(15, 23, 42, 0.95);
-                color: #38bdf8;
-                padding: 4px 10px;
-                border-radius: 8px;
-                font-size: 11px;
-                font-weight: 800;
-                border: 2px solid #0284c7;
-                box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-                white-space: nowrap;
-                margin-top: 4px;
-                letter-spacing: -0.01em;
-              ">
-                ⚡ NODO: ${c.nearestNode.name}
-              </div>
+                z-index: 10;
+              ">📍</div>
             </div>
           `,
-          iconSize: [210, 70],
-          iconAnchor: [105, 17]
+          iconSize: [36, 36],
+          iconAnchor: [18, 18]
+        });
+
+        const clientMarker = L.marker([c.lat, c.lng], { icon: clientIcon });
+        clientMarker.bindPopup(`<b>Punto Evaluado</b><br>Coordenadas: ${c.lat}, ${c.lng}<br>Estado: <b>${c.title}</b>`);
+        certLayersGroup.addLayer(clientMarker);
+
+        // 2. Assigned Fiber Node Marker
+        const nodeIcon = L.divIcon({
+          className: 'custom-cert-node-icon',
+          html: `
+            <div style="
+              background: linear-gradient(135deg, #0284c7, #2563eb);
+              color: white;
+              width: 34px;
+              height: 34px;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              box-shadow: 0 4px 16px rgba(2, 132, 199, 0.8);
+              border: 2.5px solid white;
+              font-size: 16px;
+              font-weight: bold;
+            ">⚡</div>
+          `,
+          iconSize: [34, 34],
+          iconAnchor: [17, 17]
         });
 
         const nodeMarker = L.marker([c.nearestNode.lat, c.nearestNode.lng], { icon: nodeIcon });
@@ -1716,7 +1995,7 @@
         // 3. High-contrast Dashed Connection Line
         const routeLine = L.polyline([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]], {
           color: '#38bdf8',
-          weight: 4,
+          weight: 3.5,
           dashArray: '8, 8',
           opacity: 0.95
         });
@@ -1740,7 +2019,7 @@
               border: 2px solid white;
               transform: translateY(-50%);
             ">
-              📏 ${c.minNodeDist}m al nodo
+              📏 ${c.distanceToNet}m a la red
             </div>
           `,
           iconSize: [140, 26],
@@ -1762,31 +2041,12 @@
       certMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
     }
 
-    function toggleCertMapLayer() {
-      if (!certMap || !certSatelliteLayer || !certStreetsLayer) return;
-      const btn = document.getElementById('btn-cert-map-layer');
-      if (certMapType === 'satellite') {
-        certMap.removeLayer(certSatelliteLayer);
-        certStreetsLayer.addTo(certMap);
-        certMapType = 'streets';
-        if (btn) btn.innerHTML = '<span>🗺️ Calles</span>';
-      } else {
-        certMap.removeLayer(certStreetsLayer);
-        certSatelliteLayer.addTo(certMap);
-        certMapType = 'satellite';
-        if (btn) btn.innerHTML = '<span>🛰️ Satélite</span>';
-      }
-    }
-
     function closeCertificateModal() {
       document.getElementById('cert-modal').classList.add('hidden');
       document.getElementById('cert-modal').classList.remove('flex');
     }
 
     // CORRECCIÓN CRÍTICA DE CAPTURA EN CERTIFICADO (HTML2CANVAS COMPLETO SIN CORTES)
-    // useCORS: true, allowTaint: false, logging: false, scrollX: 0, scrollY: 0
-    // windowWidth: modal.scrollWidth, windowHeight: modal.scrollHeight
-    // Renderiza el contenedor completo asegurando overflow visible temporal y captura perfecta.
     async function downloadCertificatePng() {
       const modal = document.getElementById('printable-certificate');
       if (!modal) return;
@@ -1804,17 +2064,13 @@
         btn.disabled = true;
       }
 
-      // Save previous styling states
       const prevOverflow = modal.style.overflow;
       const prevHeight = modal.style.height;
       const prevMaxHeight = modal.style.maxHeight;
       const prevScrollTop = modal.scrollTop;
 
       try {
-        // Reset scroll position to top
         modal.scrollTop = 0;
-
-        // Temporarily expand container to full scrollHeight to prevent partial cut
         const fullHeight = modal.scrollHeight;
         const fullWidth = modal.scrollWidth;
 
@@ -1822,7 +2078,6 @@
         modal.style.maxHeight = 'none';
         modal.style.height = `${fullHeight}px`;
 
-        // Allow Leaflet canvas and styling to settle
         await new Promise(resolve => setTimeout(resolve, 150));
 
         const canvas = await html2canvas(modal, {
@@ -1855,7 +2110,6 @@
         console.error('Error generating certificate PNG:', err);
         alert('Error al descargar la imagen del certificado.');
       } finally {
-        // Restore container styling states
         modal.style.overflow = prevOverflow;
         modal.style.height = prevHeight;
         modal.style.maxHeight = prevMaxHeight;

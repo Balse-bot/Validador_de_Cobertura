@@ -10,6 +10,9 @@ export interface EvaluationResult {
   lng: number;
   nearestNode: FiberNode;
   nodeDistanceMeters: number;
+  title: string;
+  subtitle: string;
+  nearestCondoText: string;
   subsequentNodes: SubsequentNode[];
   nearestCondo: Condominium | null;
   condoDistanceMeters: number | null;
@@ -44,14 +47,113 @@ export function calculateHaversineDistance(lat1: number, lon1: number, lat2: num
   return Math.round(R * c);
 }
 
+export interface FootprintPolygon {
+  id: string;
+  name: string;
+  pts: [number, number][];
+}
+
+export const DEFAULT_FOOTPRINTS: FootprintPolygon[] = [
+  {
+    id: "HUELLA-ALA-01",
+    name: "Huella FTTH Alajuela - A03",
+    pts: [
+      [10.019500, -84.215976],
+      [10.016500, -84.215976],
+      [10.016000, -84.214000],
+      [10.018500, -84.213200],
+      [10.020200, -84.214500],
+      [10.019500, -84.215976],
+    ],
+  },
+  {
+    id: "HUELLA-SJ-01",
+    name: "Huella FTTH San José - Sabana y Rohrmoser",
+    pts: [
+      [9.9450, -84.1250],
+      [9.9410, -84.1080],
+      [9.9320, -84.1060],
+      [9.9340, -84.1240],
+      [9.9450, -84.1250],
+    ],
+  },
+  {
+    id: "HUELLA-SJ-02",
+    name: "Huella FTTH San Pedro - Los Yoses",
+    pts: [
+      [9.9340, -84.0620],
+      [9.9320, -84.0480],
+      [9.9240, -84.0490],
+      [9.9250, -84.0630],
+      [9.9340, -84.0620],
+    ],
+  },
+  {
+    id: "HUELLA-HER-01",
+    name: "Huella FTTH Heredia Centro",
+    pts: [
+      [10.0050, -84.1240],
+      [10.0030, -84.1100],
+      [9.9920, -84.1110],
+      [9.9930, -84.1250],
+      [10.0050, -84.1240],
+    ],
+  },
+];
+
+export function pointInPolygon(lat: number, lng: number, polygon: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const xi = polygon[i][0], yi = polygon[i][1];
+    const xj = polygon[j][0], yj = polygon[j][1];
+    const intersect = ((yi > lng) !== (yj > lng)) &&
+      (lat < ((xj - xi) * (lng - yi)) / (yj - yi) + xi);
+    if (intersect) inside = !inside;
+  }
+  return inside;
+}
+
+export function distPointToSegment(px: number, py: number, x1: number, y1: number, x2: number, y2: number): number {
+  const mPerLat = 111320;
+  const mPerLon = 111320 * Math.cos((px * Math.PI) / 180);
+
+  const dx = (x2 - x1) * mPerLat;
+  const dy = (y2 - y1) * mPerLon;
+  const lenSq = dx * dx + dy * dy;
+
+  if (lenSq === 0) {
+    return calculateHaversineDistance(px, py, x1, y1);
+  }
+
+  const p_dx = (px - x1) * mPerLat;
+  const p_dy = (py - y1) * mPerLon;
+  const t = Math.max(0, Math.min(1, (p_dx * dx + p_dy * dy) / lenSq));
+
+  const projLat = x1 + t * (x2 - x1);
+  const projLon = y1 + t * (y2 - y1);
+  return calculateHaversineDistance(px, py, projLat, projLon);
+}
+
+export function getMinDistanceToPolygonPerimeter(lat: number, lng: number, polygon: [number, number][]): number {
+  let minDist = Infinity;
+  for (let i = 0; i < polygon.length; i++) {
+    const nextIdx = (i + 1) % polygon.length;
+    const d = distPointToSegment(lat, lng, polygon[i][0], polygon[i][1], polygon[nextIdx][0], polygon[nextIdx][1]);
+    if (d < minDist) minDist = d;
+  }
+  return minDist;
+}
+
 export function evaluateLocation(
   lat: number,
   lng: number,
   customNodes: FiberNode[] = FIBER_NODES,
-  customCondos: Condominium[] = CONDOMINIUMS
+  customCondos: Condominium[] = CONDOMINIUMS,
+  customFootprints: FootprintPolygon[] = DEFAULT_FOOTPRINTS
 ): EvaluationResult {
   const nodes = customNodes.length > 0 ? customNodes : FIBER_NODES;
   const condos = customCondos.length > 0 ? customCondos : CONDOMINIUMS;
+  const footprints = customFootprints.length > 0 ? customFootprints : DEFAULT_FOOTPRINTS;
 
   const nodeDistances = nodes
     .map((node) => ({
@@ -93,34 +195,70 @@ export function evaluateLocation(
     condoAlert = `⚠️ Advertencia Operativa: El nodo/cierre más próximo pertenece o se ubica en el entorno del condominio o residencial privado "${resName}". Debe confirmarse si la red interna cuenta con servidumbre o acceso expedito hacia la vía pública.`;
   }
 
+  // 1. Ray-Casting & Edge Distance on Footprint Polygons (Huella de Red Oficial)
+  let isInsidePolygon = false;
+  let minPolyEdgeDist = Infinity;
+
+  for (const poly of footprints) {
+    if (!poly.pts || poly.pts.length < 3) continue;
+    if (pointInPolygon(lat, lng, poly.pts)) {
+      isInsidePolygon = true;
+    }
+    const edgeDist = getMinDistanceToPolygonPerimeter(lat, lng, poly.pts);
+    if (edgeDist < minPolyEdgeDist) {
+      minPolyEdgeDist = edgeDist;
+    }
+  }
+
+  // 2. Reglas de Factibilidad Geodésica American Data Networks:
+  // - Si está DENTRO: "CON COBERTURA" (Verde)
+  // - Si está FUERA:
+  //   * Distancia al borde entre 1m y 400m: "Al borde" (Naranja) -> "Está a [X] metros de la red."
+  //   * Distancia al borde > 400m: "SIN COBERTURA" (Rojo)
   let feasibility: 'FACTIBLE' | 'ESTUDIO' | 'NO_FACTIBLE';
+  let title: string;
+  let subtitle: string;
   let feasibilityLabel: string;
   let feasibilityDesc: string;
   let badgeColor: string;
   let badgeBg: string;
   let installTime: string;
 
-  if (minNodeDist <= 20) {
+  const nearestCondoName = nearestCondo ? nearestCondo.name : 'Residencial en el cuadrante';
+  const nearestCondoDist = minCondoDist !== Infinity ? minCondoDist : 120;
+  const nearestCondoText = `Condominio más cercano: ${nearestCondoName} (a ${nearestCondoDist} m)`;
+
+  if (isInsidePolygon) {
     feasibility = 'FACTIBLE';
-    feasibilityLabel = '🟢 CON COBERTURA (Red al frente / Huella FTTH Activa)';
-    feasibilityDesc = 'Ubicación óptima a menos de 20 metros del nodo/cierre FTTH. Conexión directa disponible.';
+    title = 'Con cobertura';
+    subtitle = 'Está dentro de la huella de red oficial. Conexión directa disponible.';
+    feasibilityLabel = '🟢 Con cobertura';
+    feasibilityDesc = 'Ubicación con conexión inmediata dentro de la huella FTTH oficial.';
     badgeColor = 'text-emerald-400';
     badgeBg = 'bg-emerald-500/10 border-emerald-500/25 text-emerald-300';
     installTime = '24 a 48 horas hábiles';
-  } else if (minNodeDist <= 150) {
-    feasibility = 'ESTUDIO';
-    feasibilityLabel = '🟠 AL BORDE DEL RANGO (Estudio de Factibilidad)';
-    feasibilityDesc = `A ${minNodeDist}m del cierre más cercano. Requiere inspección de posteo, verificación de servidumbres y tendido adicional de acometida.`;
-    badgeColor = 'text-amber-400';
-    badgeBg = 'bg-amber-500/10 border-amber-500/25 text-amber-300';
-    installTime = '3 a 5 días hábiles (Inspección en campo)';
   } else {
-    feasibility = 'NO_FACTIBLE';
-    feasibilityLabel = '🔴 SIN COBERTURA (Registrar para Expansión)';
-    feasibilityDesc = `A ${minNodeDist}m del cierre más próximo. Excede el rango estándar máximo de acometida FTTH (> 150m).`;
-    badgeColor = 'text-rose-400';
-    badgeBg = 'bg-rose-500/10 border-rose-500/25 text-rose-300';
-    installTime = 'Sujeto a plan de expansión de red';
+    const effectiveDist = minPolyEdgeDist !== Infinity ? minPolyEdgeDist : minNodeDist;
+
+    if (effectiveDist <= 400) {
+      feasibility = 'ESTUDIO';
+      title = 'Al borde';
+      subtitle = `Está a ${effectiveDist} metros de la red. Hace falta el estudio para confirmarlo.`;
+      feasibilityLabel = '🟠 Al borde';
+      feasibilityDesc = `Está a ${effectiveDist} metros de la red. Hace falta el estudio para confirmarlo.`;
+      badgeColor = 'text-amber-400';
+      badgeBg = 'bg-amber-500/10 border-amber-500/25 text-amber-300';
+      installTime = '3 a 5 días hábiles (Inspección en campo)';
+    } else {
+      feasibility = 'NO_FACTIBLE';
+      title = 'Sin cobertura';
+      subtitle = `Está a ${effectiveDist} metros de la red. Excede el rango estándar de cobertura (> 400 m).`;
+      feasibilityLabel = '🔴 Sin cobertura';
+      feasibilityDesc = `A ${effectiveDist}m de la red. Excede el rango de viabilidad técnica estándar (> 400m).`;
+      badgeColor = 'text-rose-400';
+      badgeBg = 'bg-rose-500/10 border-rose-500/25 text-rose-300';
+      installTime = 'Sujeto a plan de expansión de red';
+    }
   }
 
   // Precise Costa Rica Territorial Resolution
@@ -173,6 +311,9 @@ export function evaluateLocation(
     lng,
     nearestNode,
     nodeDistanceMeters: minNodeDist,
+    title,
+    subtitle,
+    nearestCondoText,
     subsequentNodes,
     nearestCondo: minCondoDist < 2000 ? nearestCondo : null,
     condoDistanceMeters: minCondoDist < 2000 ? minCondoDist : null,

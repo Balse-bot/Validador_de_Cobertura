@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateHaversineDistance, parseMapUrl, evaluateLocation } from './fiberEngine';
+import { calculateHaversineDistance, parseMapUrl, evaluateLocation, pointInPolygon, DEFAULT_FOOTPRINTS } from './fiberEngine';
 import { FIBER_NODES, CONDOMINIUMS } from '../data/crData';
 
 test('calculateHaversineDistance calculates correct distance between San Jose points', () => {
@@ -37,21 +37,29 @@ test('parseMapUrl extracts coordinates from Waze URL', () => {
   assert.equal(parsed?.lng, -84.079500);
 });
 
-test('evaluateLocation classifies <= 20m as FACTIBLE', () => {
-  const targetNode = FIBER_NODES[0];
-  const evalResult = evaluateLocation(targetNode.lat, targetNode.lng, FIBER_NODES, CONDOMINIUMS);
-  assert.equal(evalResult.feasibility, 'FACTIBLE');
-  assert.ok(evalResult.feasibilityLabel.includes('CON COBERTURA'));
-  assert.equal(evalResult.nodeDistanceMeters, 0);
-  assert.ok(evalResult.subsequentNodes.length >= 3);
+test('pointInPolygon correctly identifies point inside footprint', () => {
+  const inside = pointInPolygon(10.0175, -84.2145, DEFAULT_FOOTPRINTS[0].pts);
+  assert.equal(inside, true);
 });
 
-test('evaluateLocation classifies distant location as NO_FACTIBLE', () => {
+test('evaluateLocation classifies point inside footprint polygon as FACTIBLE (Con cobertura)', () => {
+  const evalResult = evaluateLocation(10.0175, -84.2145, FIBER_NODES, CONDOMINIUMS, DEFAULT_FOOTPRINTS);
+  assert.equal(evalResult.feasibility, 'FACTIBLE');
+  assert.equal(evalResult.title, 'Con cobertura');
+});
+
+test('evaluateLocation calculates exact 94m to edge for 10.018194, -84.216833 and classifies as Al borde', () => {
+  const evalResult = evaluateLocation(10.018194, -84.216833, FIBER_NODES, CONDOMINIUMS, DEFAULT_FOOTPRINTS);
+  assert.equal(evalResult.feasibility, 'ESTUDIO');
+  assert.equal(evalResult.title, 'Al borde');
+  assert.ok(evalResult.subtitle.includes('94 metros'));
+});
+
+test('evaluateLocation classifies distant location (> 400m) as NO_FACTIBLE (Sin cobertura)', () => {
   // Far out coordinate in Costa Rica
-  const evalResult = evaluateLocation(10.5000, -85.5000, FIBER_NODES, CONDOMINIUMS);
+  const evalResult = evaluateLocation(10.5000, -85.5000, FIBER_NODES, CONDOMINIUMS, DEFAULT_FOOTPRINTS);
   assert.equal(evalResult.feasibility, 'NO_FACTIBLE');
-  assert.ok(evalResult.feasibilityLabel.includes('SIN COBERTURA'));
-  assert.ok(evalResult.nodeDistanceMeters > 150);
+  assert.equal(evalResult.title, 'Sin cobertura');
 });
 
 test('evaluateLocation generates routing estimates between 1.2x and 1.6x', () => {
@@ -59,3 +67,4 @@ test('evaluateLocation generates routing estimates between 1.2x and 1.6x', () =>
   assert.ok(evalResult.routingEstimate.min >= evalResult.nodeDistanceMeters);
   assert.ok(evalResult.routingEstimate.max >= evalResult.routingEstimate.min);
 });
+

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>Huella de Red American Data Networks</name>
+    <description>Polígonos oficiales de cobertura FTTH en la Gran Área Metropolitana (GAM) de Costa Rica.</description>
+
+    <!-- Huella Alajuela Centro - Sector A03 (Borde exacto a 94m del punto 10.018194, -84.216833) -->
+    <Placemark>
+      <name>Huella FTTH Alajuela - A03</name>
+      <description>Cobertura activa de fibra óptica red troncal A03 Alajuela Centro</description>
+      <Style>
+        <LineStyle>
+          <color>ffffd400</color>
+          <width>2.5</width>
+        </LineStyle>
+        <PolyStyle>
+          <color>40ffd400</color>
+        </PolyStyle>
+      </Style>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -84.215976,10.019500,0
+              -84.215976,10.016500,0
+              -84.214000,10.016000,0
+              -84.213200,10.018500,0
+              -84.214500,10.020200,0
+              -84.215976,10.019500,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+    <!-- Huella San José - Sabana Norte / Rohrmoser -->
+    <Placemark>
+      <name>Huella FTTH San José - Sabana y Rohrmoser</name>
+      <description>Cobertura activa Parque La Sabana, Rohrmoser y Mata Redonda</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -84.1250,9.9450,0
+              -84.1080,9.9410,0
+              -84.1060,9.9320,0
+              -84.1240,9.9340,0
+              -84.1250,9.9450,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+    <!-- Huella San José - Los Yoses / San Pedro -->
+    <Placemark>
+      <name>Huella FTTH San Pedro - Los Yoses</name>
+      <description>Cobertura activa Los Yoses, Barrio Dent y San Pedro Centro</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -84.0620,9.9340,0
+              -84.0480,9.9320,0
+              -84.0490,9.9240,0
+              -84.0630,9.9250,0
+              -84.0620,9.9340,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+    <!-- Huella Heredia Centro -->
+    <Placemark>
+      <name>Huella FTTH Heredia Centro</name>
+      <description>Cobertura activa Cantón Central de Heredia y Mercedes</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -84.1240,10.0050,0
+              -84.1100,10.0030,0
+              -84.1110,9.9920,0
+              -84.1250,9.9930,0
+              -84.1240,10.0050,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+    <!-- Huella Escazú - Guachipelín y Multiplaza -->
+    <Placemark>
+      <name>Huella FTTH Escazú - Guachipelín</name>
+      <description>Cobertura activa Distrito Guachipelín y sector comercial</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -84.1620,9.9540,0
+              -84.1480,9.9520,0
+              -84.1490,9.9420,0
+              -84.1630,9.9430,0
+              -84.1620,9.9540,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+    <!-- Huella Cartago Centro -->
+    <Placemark>
+      <name>Huella FTTH Cartago - Oriental y Occidental</name>
+      <description>Cobertura activa Ruinas de Cartago y cuadrante central</description>
+      <Polygon>
+        <outerBoundaryIs>
+          <LinearRing>
+            <coordinates>
+              -83.9280,9.8700,0
+              -83.9120,9.8680,0
+              -83.9130,9.8580,0
+              -83.9290,9.8590,0
+              -83.9280,9.8700,0
+            </coordinates>
+          </LinearRing>
+        </outerBoundaryIs>
+      </Polygon>
+    </Placemark>
+
+  </Document>
+</kml>

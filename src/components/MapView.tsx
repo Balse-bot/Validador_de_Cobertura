@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { FiberNode, Condominium } from '../data/crData';
-import { EvaluationResult } from '../utils/fiberEngine';
+import { EvaluationResult, DEFAULT_FOOTPRINTS } from '../utils/fiberEngine';
 import { Layers, Navigation } from 'lucide-react';
 
 interface MapViewProps {
@@ -17,7 +17,7 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
   const polylineLayerRef = useRef<L.LayerGroup | null>(null);
-  const [mapType, setMapType] = useState<'satellite' | 'streets'>('satellite');
+  const [mapType, setMapType] = useState<'dark' | 'streets'>('dark');
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -29,10 +29,10 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
 
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      const satellite = L.tileLayer(
-        'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      const darkMatter = L.tileLayer(
+        'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
         {
-          attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+          attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',
           maxZoom: 19,
         }
       );
@@ -42,9 +42,9 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
         maxZoom: 19,
       });
 
-      satellite.addTo(map);
-      (map as any)._currentBaseLayer = satellite;
-      (map as any)._satelliteLayer = satellite;
+      darkMatter.addTo(map);
+      (map as any)._currentBaseLayer = darkMatter;
+      (map as any)._darkLayer = darkMatter;
       (map as any)._streetsLayer = streets;
 
       map.on('click', (e: L.LeafletMouseEvent) => {
@@ -257,23 +257,59 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
 
     const distanceMarker = L.marker([midLat, midLng], { icon: distanceBadgeIcon });
 
+    // Render backbone fiber lines in bright electric blue with defined dark border
+    if (nodes.length > 1) {
+      for (let i = 0; i < Math.min(nodes.length - 1, 30); i++) {
+        const n1 = nodes[i];
+        const n2 = nodes[i + 1];
+        if (Math.abs(n1.lat - n2.lat) < 0.09 && Math.abs(n1.lng - n2.lng) < 0.09) {
+          // Defined dark outer border
+          L.polyline([[n1.lat, n1.lng], [n2.lat, n2.lng]], {
+            color: '#081a2e',
+            weight: 4.5,
+            opacity: 0.9,
+            interactive: false,
+          }).addTo(polylineLayerRef.current);
+          // Bright electric blue inner line
+          L.polyline([[n1.lat, n1.lng], [n2.lat, n2.lng]], {
+            color: '#00d4ff',
+            weight: 2.2,
+            opacity: 0.95,
+            interactive: false,
+          }).addTo(polylineLayerRef.current);
+        }
+      }
+    }
+
+        // Render Official FTTH Footprint Polygons (CartoDB Dark Matter with bright cyan border)
+    DEFAULT_FOOTPRINTS.forEach(poly => {
+      if (!poly.pts || poly.pts.length < 3) return;
+      L.polygon(poly.pts, {
+        color: '#00d4ff',
+        weight: 2.5,
+        fillColor: '#00d4ff',
+        fillOpacity: 0.22,
+        interactive: false,
+      }).addTo(polylineLayerRef.current!);
+    });
+
     polylineLayerRef.current.addLayer(polyline);
     polylineLayerRef.current.addLayer(distanceMarker);
   }, [evaluation, nodes, condos, showNodes]);
 
-  const toggleMapType = (type: 'satellite' | 'streets') => {
+  const toggleMapType = (type: 'dark' | 'streets') => {
     const map = mapRef.current;
     if (!map) return;
     setMapType(type);
 
-    const satellite = (map as any)._satelliteLayer;
+    const dark = (map as any)._darkLayer;
     const streets = (map as any)._streetsLayer;
     const current = (map as any)._currentBaseLayer;
 
-    if (type === 'satellite' && current !== satellite) {
+    if (type === 'dark' && current !== dark) {
       map.removeLayer(current);
-      satellite.addTo(map);
-      (map as any)._currentBaseLayer = satellite;
+      dark.addTo(map);
+      (map as any)._currentBaseLayer = dark;
     } else if (type === 'streets' && current !== streets) {
       map.removeLayer(current);
       streets.addTo(map);
@@ -282,48 +318,63 @@ export const MapView: React.FC<MapViewProps> = ({ evaluation, onSelectCoordinate
   };
 
   return (
-    <div id="leaflet-map-container" className="relative w-full h-full min-h-[500px] lg:min-h-[700px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
-      <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-10" />
+    <div className="flex flex-col space-y-2 w-full h-full">
+      <div id="leaflet-map-container" className="relative w-full h-[400px] lg:h-[460px] rounded-3xl overflow-hidden shadow-2xl border border-slate-800">
+        <div ref={mapContainerRef} className="w-full h-full absolute inset-0 z-10" />
 
-      <div className="absolute top-4 left-4 z-20 bg-slate-900/85 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex flex-wrap gap-1.5">
-        <button
-          onClick={() => toggleMapType('satellite')}
-          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-            mapType === 'satellite'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-300 hover:bg-slate-800'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5" />
-          <span>Satélite</span>
-        </button>
-        <button
-          onClick={() => toggleMapType('streets')}
-          className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition ${
-            mapType === 'streets'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'text-slate-300 hover:bg-slate-800'
-          }`}
-        >
-          <Navigation className="w-3.5 h-3.5" />
-          <span>Calles</span>
-        </button>
+        <div className="absolute top-4 left-4 z-20 bg-slate-900/85 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex flex-wrap gap-1.5">
+          <button
+            onClick={() => toggleMapType('dark')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition ${
+              mapType === 'dark'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Modo Oscuro</span>
+          </button>
+          <button
+            onClick={() => toggleMapType('streets')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition ${
+              mapType === 'streets'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'text-slate-300 hover:bg-slate-800'
+            }`}
+          >
+            <Navigation className="w-3.5 h-3.5" />
+            <span>Calles</span>
+          </button>
+        </div>
+
+        <div className="absolute bottom-4 left-4 z-20 bg-slate-900/80 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-xl border border-slate-800 text-xs text-slate-300 space-y-2 hidden sm:block">
+          <div className="font-bold text-white mb-1">Red American Data Networks (GAM)</div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3.5 h-1 rounded-full bg-cyan-400"></div>
+            <span>Tendido de Fibra Óptica</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+            <span>Nodo Principal Activo</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+            <span>Condominio Residencial</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+            <span>Punto Evaluado</span>
+          </div>
+        </div>
       </div>
 
-      <div className="absolute bottom-4 left-4 z-20 bg-slate-900/80 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-xl border border-slate-800 text-xs text-slate-300 space-y-2 hidden sm:block">
-        <div className="font-bold text-white mb-1">Zonas GAM (San José, Heredia, Cartago, Alajuela)</div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-          <span>Nodo Principal Activo</span>
+      {/* MANDATORY MAP NOTE: EXACT TEXT REQUIRED UNDER MAP CONTAINER */}
+      <div className="flex items-center justify-between px-3 py-2 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs text-slate-300 shadow-md">
+        <div className="flex items-center space-x-2 text-cyan-400 font-semibold">
+          <span className="w-3.5 h-1 bg-cyan-400 rounded-full inline-block shrink-0 shadow-sm"></span>
+          <span>Las líneas azules son el tendido de fibra, no área de cobertura.</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-          <span>Condominio Residencial</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
-          <span>Punto Evaluado</span>
-        </div>
+        <span className="text-[11px] text-slate-400 hidden sm:inline">Validador ADN v4.11 | American Data Networks</span>
       </div>
     </div>
   );
