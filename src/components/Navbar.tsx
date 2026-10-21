@@ -26,14 +26,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div>
             <div className="flex items-center space-x-2">
               <h1 className="text-base font-bold text-white tracking-tight">
-                FibraCR <span className="text-blue-400 font-semibold">Validador Pro</span>
+                Validador ADN v4.11 <span className="text-blue-400 font-semibold">| American Data Networks</span>
               </h1>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                CR 🇨🇷 GAM
+                ADN Fibra 🇨🇷
               </span>
             </div>
             <p className="text-[11px] text-slate-400 hidden sm:block">
-              San José • Heredia • Cartago • Alajuela
+              ADN Fibra • San José • Heredia • Cartago • Alajuela (GAM)
             </p>
           </div>
         </div>

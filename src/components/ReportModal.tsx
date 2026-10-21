@@ -258,17 +258,45 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, evalu
     if (!certElement) return;
 
     setIsExporting(true);
+    const prevOverflow = certElement.style.overflow;
+    const prevHeight = certElement.style.height;
+    const prevMaxHeight = certElement.style.maxHeight;
+    const prevScrollTop = certElement.scrollTop;
+
     try {
+      certElement.scrollTop = 0;
+      const fullHeight = certElement.scrollHeight;
+      const fullWidth = certElement.scrollWidth;
+
+      certElement.style.overflow = 'visible';
+      certElement.style.maxHeight = 'none';
+      certElement.style.height = `${fullHeight}px`;
+
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       const canvas = await html2canvas(certElement, {
         useCORS: true,
-        allowTaint: true,
-        scale: 2,
+        allowTaint: false,
         logging: false,
+        scale: 2,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: fullWidth,
+        windowHeight: fullHeight,
+        onclone: (clonedDoc) => {
+          const clonedModal = clonedDoc.getElementById('printable-certificate');
+          if (clonedModal) {
+            clonedModal.style.overflow = 'visible';
+            clonedModal.style.maxHeight = 'none';
+            clonedModal.style.height = 'auto';
+            clonedModal.style.width = `${certElement.offsetWidth}px`;
+          }
+        },
       });
       const dataUrl = canvas.toDataURL('image/png');
       const a = document.createElement('a');
       a.href = dataUrl;
-      a.download = `certificado-factibilidad-fibra-${evaluation.lat}-${evaluation.lng}.png`;
+      a.download = `Certificado-ADN-v4.11-${evaluation.lat}-${evaluation.lng}.png`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -276,6 +304,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, evalu
       console.error(err);
       alert('Error al descargar la imagen del certificado.');
     } finally {
+      certElement.style.overflow = prevOverflow;
+      certElement.style.height = prevHeight;
+      certElement.style.maxHeight = prevMaxHeight;
+      certElement.scrollTop = prevScrollTop;
       setIsExporting(false);
     }
   };
@@ -327,17 +359,19 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, evalu
         {/* Certificate Printable Area */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 bg-slate-900 text-white font-sans" id="printable-certificate">
           <div className="border-b border-slate-800 pb-5 flex justify-between items-start">
-            <div>
-              <div className="flex items-center space-x-2">
-                <Wifi className="w-6 h-6 text-blue-400" />
-                <h2 className="text-xl font-black tracking-tight text-white">FIBRA-CR TELECOM</h2>
+            <div className="flex items-center space-x-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-black text-base shadow-lg shadow-blue-500/30">
+                ADN
               </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Dirección Nacional de Infraestructura y Redes FTTH • Costa Rica
-              </p>
+              <div>
+                <h2 className="text-xl font-black tracking-tight text-white">Validador ADN v4.11 | American Data Networks</h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  ADN Fibra • Dirección de Redes FTTH & Infraestructura • Costa Rica
+                </p>
+              </div>
             </div>
             <div className="text-right">
-              <span className="text-xs font-mono text-slate-400 block">CERT-ID: CR-{Math.floor(100000 + Math.random() * 900000)}</span>
+              <span className="text-xs font-mono text-blue-400 block">CERT-ID: ADN-{Math.floor(100000 + Math.random() * 900000)}</span>
               <span className="text-xs text-slate-400">Fecha: {new Date().toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
             </div>
           </div>
@@ -441,7 +475,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, evalu
               <b>Nota técnica:</b> Este certificado valida la factibilidad de conexión mediante la fórmula geodésica de Haversine y el inventario georreferenciado de nodos de la Gran Área Metropolitana (GAM). Todo servicio queda sujeto a inspección visual de posteo y disponibilidad de puertos en caja de empalme.
             </p>
             <p className="text-center pt-2 font-semibold text-slate-300">
-              🇨🇷 Red Nacional de Fibra Óptica FTTH • Costa Rica
+              Validador ADN v4.11 | American Data Networks • Red Nacional FTTH
             </p>
           </div>
         </div>
