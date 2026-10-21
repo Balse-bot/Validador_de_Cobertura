@@ -407,21 +407,17 @@
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
               <span>🗺️ Mapa Satelital de Referencia: Coordenada del Cliente y Tendido de Fibra</span>
             </span>
-            <div class="flex items-center space-x-2 print:hidden">
-              <button type="button" onclick="resetCertMapView()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition flex items-center space-x-1 shadow-sm">
-                <span>🎯 Centrar Traza</span>
-              </button>
-            </div>
           </div>
           
-          <div class="relative w-full h-60 sm:h-64 rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-2xl">
-            <div id="cert-map" class="w-full h-full z-0"></div>
+          <div class="relative w-full h-60 sm:h-64 rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-xl">
+            <!-- SOLUCIÓN 1: pointer-events-none para que el mapa sea intocable -->
+            <div id="cert-map" class="w-full h-full z-0 pointer-events-none"></div>
           </div>
 
-          <!-- LEYENDA MOVIDA FUERA DEL MAPA -->
-          <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] mt-2">
+          <!-- SOLUCIÓN 2: Leyenda reubicada completamente FUERA del mapa -->
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] mt-2 shadow-sm">
             <div class="flex items-center gap-1.5 font-bold text-white">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shrink-0 shadow-sm"></span>
+              <span id="cert-map-legend-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shrink-0 shadow-sm"></span>
               <span>📍 Cliente: <span id="cert-map-legend-coords" class="text-cyan-300 font-mono"></span></span>
             </div>
             <div class="flex items-center gap-1.5 font-bold text-white">
@@ -511,11 +507,7 @@
           tx.oncomplete = () => {
             if (reqNodes.result && reqNodes.result.length > 0) {
               resolve({
-                nodes: reqNodes.result,
-                cables: reqCables.result || [],
-                polys: reqPolys.result || [],
-                condos: reqCondos.result || [],
-                fileName: reqFileName.result || 'Caché Local'
+                nodes: reqNodes.result, cables: reqCables.result || [], polys: reqPolys.result || [], condos: reqCondos.result || [], fileName: reqFileName.result || 'Caché Local'
               });
             } else { resolve(null); }
           };
@@ -709,11 +701,9 @@
           const res = await fetch(url);
           if (res.ok) {
             if (url.endsWith('.geojson')) {
-              const geojson = await res.json();
-              footprintPolygons = parseGeoJsonPolygons(geojson);
+              footprintPolygons = parseGeoJsonPolygons(await res.json());
             } else {
-              const kmlText = await res.text();
-              footprintPolygons = parseKmlPolygons(kmlText);
+              footprintPolygons = parseKmlPolygons(await res.text());
             }
             if (footprintPolygons.length > 0) {
               updateFootprintBadgeUI(url, footprintPolygons.length);
@@ -767,18 +757,11 @@
       map = L.map('map', { zoomControl: false }).setView([9.9281, -84.0907], 15);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // Usamos el servicio libre de alta definición de ESRI World Imagery que no bloquea la descarga CORS
-      darkMatterLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        maxNativeZoom: 19, maxZoom: 21, attribution: '&copy; Esri', crossOrigin: 'anonymous'
-      });
-      // Capa de nombres de calles y lugares por encima
-      const labelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-        maxNativeZoom: 19, maxZoom: 21, crossOrigin: 'anonymous'
+      darkMatterLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 21, attribution: '&copy; Google Maps'
       });
 
       darkMatterLayer.addTo(map);
-      labelsLayer.addTo(map);
-      
       currentBaseLayer = darkMatterLayer;
 
       cablesLayer = L.layerGroup().addTo(map);
@@ -831,7 +814,6 @@
       })();
     }
 
-    // GEOCODING INVERSO DE OSM
     async function fetchTerritorialAddress(lat, lng) {
       let result = { provincia: "San José", canton: "San José", distrito: "Central", barrio: "Barrio", exactStreet: "Calle Principal", localPOI: null };
       try {
@@ -844,111 +826,68 @@
           result.distrito = a.suburb || a.city_district || a.village || "Central";
           result.barrio = a.neighbourhood || a.residential || result.distrito;
           result.exactStreet = a.road || "Calle Principal";
+          result.localPOI = a.amenity || a.shop || a.leisure || a.building || a.tourism || a.historic || a.office || null;
         }
-      } catch (e) { console.warn("Error Geocoding:", e); }
+      } catch (e) {}
       return result;
     }
 
-    // OVERPASS API: DIRECCIÓN TICA CON PUNTOS CARDINALES Y DISTANCIAS
     async function fetchColloquialAddress(lat, lng, geoInfo) {
       try {
-        const query = `[out:json][timeout:5];
-        (
-          nwr(around:400,${lat},${lng})["name"]["amenity"];
-          nwr(around:400,${lat},${lng})["name"]["shop"];
-          nwr(around:400,${lat},${lng})["name"]["building"];
-          nwr(around:400,${lat},${lng})["name"]["tourism"];
-          nwr(around:400,${lat},${lng})["name"]["historic"];
-          nwr(around:400,${lat},${lng})["name"]["leisure"];
-          nwr(around:400,${lat},${lng})["name"]["office"];
-          nwr(around:400,${lat},${lng})["name"]["healthcare"];
-        );
-        out center 5;`;
-
+        const query = `[out:json][timeout:5];(nwr(around:400,${lat},${lng})["name"]["amenity"];nwr(around:400,${lat},${lng})["name"]["shop"];nwr(around:400,${lat},${lng})["name"]["building"];nwr(around:400,${lat},${lng})["name"]["tourism"];nwr(around:400,${lat},${lng})["name"]["historic"];nwr(around:400,${lat},${lng})["name"]["leisure"];nwr(around:400,${lat},${lng})["name"]["office"];nwr(around:400,${lat},${lng})["name"]["healthcare"];);out center 5;`;
         const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
         if (res.ok) {
           const data = await res.json();
           const namedElements = data.elements.filter(e => e.tags && e.tags.name);
           if (namedElements.length > 0) {
-            let closest = null;
-            let minDist = Infinity;
+            let closest = null, minDist = Infinity;
             namedElements.forEach(el => {
               const poiLat = el.lat || (el.center && el.center.lat);
               const poiLng = el.lon || (el.center && el.center.lon);
               if (poiLat && poiLng) {
                 const d = calculateHaversineDistance(lat, lng, poiLat, poiLng);
-                if (d < minDist && d > 2) { 
-                  minDist = d; closest = { name: el.tags.name, lat: poiLat, lng: poiLng }; 
-                }
+                if (d < minDist && d > 2) { minDist = d; closest = { name: el.tags.name, lat: poiLat, lng: poiLng }; }
               }
             });
-
             if (closest) {
               const dLon = (lng - closest.lng) * Math.PI / 180;
-              const lat1 = closest.lat * Math.PI / 180;
-              const lat2 = lat * Math.PI / 180;
+              const lat1 = closest.lat * Math.PI / 180, lat2 = lat * Math.PI / 180;
               const y = Math.sin(dLon) * Math.cos(lat2);
               const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
               let brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360; 
-              
               brng = (brng + 180) % 360; 
-
               let cardinal = "Norte";
-              if (brng >= 337.5 || brng < 22.5) cardinal = "Norte";
-              else if (brng >= 22.5 && brng < 67.5) cardinal = "Noreste";
-              else if (brng >= 67.5 && brng < 112.5) cardinal = "Este";
-              else if (brng >= 112.5 && brng < 157.5) cardinal = "Sureste";
-              else if (brng >= 157.5 && brng < 202.5) cardinal = "Sur";
-              else if (brng >= 202.5 && brng < 247.5) cardinal = "Suroeste";
-              else if (brng >= 247.5 && brng < 292.5) cardinal = "Oeste";
-              else if (brng >= 292.5 && brng < 337.5) cardinal = "Noroeste";
-
-              if (minDist <= 15) {
-                return `Sobre ${geoInfo.exactStreet}, frente o contiguo a ${closest.name}.`;
-              }
+              if (brng >= 337.5 || brng < 22.5) cardinal = "Norte"; else if (brng >= 22.5 && brng < 67.5) cardinal = "Noreste"; else if (brng >= 67.5 && brng < 112.5) cardinal = "Este"; else if (brng >= 112.5 && brng < 157.5) cardinal = "Sureste"; else if (brng >= 157.5 && brng < 202.5) cardinal = "Sur"; else if (brng >= 202.5 && brng < 247.5) cardinal = "Suroeste"; else if (brng >= 247.5 && brng < 292.5) cardinal = "Oeste"; else if (brng >= 292.5 && brng < 337.5) cardinal = "Noroeste";
+              if (minDist <= 15) return `Sobre ${geoInfo.exactStreet}, frente o contiguo a ${closest.name}.`;
               const roundedDist = Math.round(minDist / 5) * 5;
-              
               let referenceStr = `De ${closest.name}, aprox. ${roundedDist} metros al ${cardinal}`;
-              if (geoInfo.exactStreet && geoInfo.exactStreet.toLowerCase() !== "calle principal") {
-                referenceStr += `, sobre ${geoInfo.exactStreet}.`;
-              } else {
-                referenceStr += `.`;
-              }
+              if (geoInfo.exactStreet && geoInfo.exactStreet.toLowerCase() !== "calle principal") referenceStr += `, sobre ${geoInfo.exactStreet}.`; else referenceStr += `.`;
               return referenceStr;
             }
           }
         }
       } catch (e) {}
-      
-      return geoInfo.exactStreet && geoInfo.exactStreet.toLowerCase() !== "calle principal" 
-        ? `Sobre ${geoInfo.exactStreet}, ${geoInfo.barrio}.` 
-        : `Sector de ${geoInfo.barrio}, ${geoInfo.distrito}.`;
+      if (geoInfo.localPOI) return `Sobre ${geoInfo.exactStreet}, en el sector de ${geoInfo.localPOI}.`;
+      return geoInfo.exactStreet && geoInfo.exactStreet.toLowerCase() !== "calle principal" ? `Sobre ${geoInfo.exactStreet}, ${geoInfo.barrio}.` : `Sector de ${geoInfo.barrio}, ${geoInfo.distrito}.`;
     }
 
     async function evaluateCoordinates(lat, lng, sourceName = '') {
-      if (fiberNodes.length === 0) {
-        alert("Aún no hay nodos cargados. Por favor espere o suba el archivo de red.");
-        return;
-      }
+      if (fiberNodes.length === 0) { alert("Aún no hay nodos cargados. Por favor espere o suba el archivo de red."); return; }
       currentLat = lat; currentLng = lng;
       document.getElementById('coords-badge').innerText = `Lat: ${lat} • Lng: ${lng}`;
       
-      // ESTADO DE CARGA
       document.getElementById('res-prov-canton').innerText = "Cargando ubicación...";
       document.getElementById('res-dist-barrio').innerText = "...";
       document.getElementById('res-exact-street').innerText = "...";
       document.getElementById('res-colloquial').innerText = "Buscando referencias exactas...";
 
       const clientPt = turf.point([lng, lat]);
-      const latThreshold = 0.015; 
-      const lngThreshold = 0.015;
+      const latThreshold = 0.015, lngThreshold = 0.015;
 
       let nearbyNodes = fiberNodes.filter(n => Math.abs(n.lat - lat) < latThreshold && Math.abs(n.lng - lng) < lngThreshold);
       if(nearbyNodes.length === 0) nearbyNodes = fiberNodes;
 
-      const nodeDistances = nearbyNodes.map(node => ({
-        node, distance: Math.round(turf.distance(clientPt, turf.point([node.lng, node.lat])) * 1000)
-      })).sort((a, b) => a.distance - b.distance);
+      const nodeDistances = nearbyNodes.map(node => ({ node, distance: Math.round(turf.distance(clientPt, turf.point([node.lng, node.lat])) * 1000) })).sort((a, b) => a.distance - b.distance);
 
       const nearestNode = nodeDistances[0].node;
       const minNodeDist = nodeDistances[0].distance;
@@ -960,8 +899,7 @@
       });
       if(nearbyCables.length === 0) nearbyCables = fiberCables;
 
-      let minCableDist = Infinity;
-      let nearestCable = null;
+      let minCableDist = Infinity, nearestCable = null;
       for (const cable of nearbyCables) {
         if (!cable.pts || cable.pts.length < 2) continue;
         const line = turf.lineString(cable.pts.map(p => [p[1], p[0]]));
@@ -972,8 +910,7 @@
       minCableDist = Math.round(minCableDist);
       if (minCableDist === Infinity) minCableDist = minNodeDist;
 
-      let isInsidePolygon = false;
-      let minPolyEdgeDist = Infinity;
+      let isInsidePolygon = false, minPolyEdgeDist = Infinity;
       
       for (const poly of footprintPolygons) {
         if (!poly.pts || poly.pts.length < 3) continue;
@@ -997,8 +934,7 @@
       let huellaStatus = isInsidePolygon ? 'adentro' : 'afuera';
       let huellaDist = distanceToNet;
 
-      let nearestCondo = null;
-      let minCondoDist = Infinity;
+      let nearestCondo = null, minCondoDist = Infinity;
       for (const condo of condominiums) {
         const d = Math.round(turf.distance(clientPt, turf.point([condo.lng, condo.lat])) * 1000);
         if (d < minCondoDist) { minCondoDist = d; nearestCondo = condo; }
@@ -1011,13 +947,7 @@
         condoAlert = `⚠️ Advertencia: El cierre más próximo se encuentra en el condominio "${cName}". Confirmar si la red interna cuenta con salida a calle pública.`;
       }
 
-      let feasibility = 'NO_FACTIBLE';
-      let title = 'Sin cobertura';
-      let subtitle = `Está a ${distanceToNet} metros de la red. Excede el rango de cobertura (máx. 400m).`;
-      let badgeClass = 'bg-rose-500/10 border-rose-500/30 text-rose-400';
-      let titleColor = 'text-rose-400';
-      let iconSvg = '<svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
-      let installTime = 'Requiere proyecto de expansión de red';
+      let feasibility = 'NO_FACTIBLE', title = 'Sin cobertura', subtitle = `Está a ${distanceToNet} metros de la red. Excede el rango de cobertura (máx. 400m).`, badgeClass = 'bg-rose-500/10 border-rose-500/30 text-rose-400', titleColor = 'text-rose-400', iconSvg = '<svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>', installTime = 'Requiere proyecto de expansión de red';
 
       if (distanceToNet <= 0) {
         feasibility = 'FACTIBLE'; title = 'Con cobertura'; subtitle = `Está dentro de la huella de red oficial. Conexión directa disponible.`;
@@ -1031,9 +961,7 @@
         installTime = '3 a 5 días hábiles (Inspección)';
       }
 
-      const routingMin = Math.round(minNodeDist * 1.2);
-      const routingMax = Math.round(minNodeDist * 1.6);
-
+      const routingMin = Math.round(minNodeDist * 1.2), routingMax = Math.round(minNodeDist * 1.6);
       const geo = await fetchTerritorialAddress(lat, lng);
       const colloquial = await fetchColloquialAddress(lat, lng, geo);
 
@@ -1110,16 +1038,23 @@
       const colorHex = feasibility === 'FACTIBLE' ? '#10b981' : feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
 
       if (showNodes) {
+        const bounds = map.getBounds().pad(0.5);
         fiberCables.forEach(cable => {
           if (!cable.pts || cable.pts.length < 2) return;
+          if (cable.bounds) {
+            if (cable.bounds.maxLat < bounds.getSouth() || cable.bounds.minLat > bounds.getNorth() ||
+                cable.bounds.maxLng < bounds.getWest() || cable.bounds.minLng > bounds.getEast()) return;
+          }
           L.polyline(cable.pts, { color: '#081a2e', weight: 4.5, opacity: 0.9, interactive: false }).addTo(cablesLayer);
           L.polyline(cable.pts, { color: '#00d4ff', weight: 2.2, opacity: 0.95, interactive: false }).addTo(cablesLayer);
         });
         footprintPolygons.forEach(poly => {
           if (!poly.pts || poly.pts.length < 3) return;
+          if (poly.pts[0][0] < bounds.getSouth() || poly.pts[0][0] > bounds.getNorth() ||
+              poly.pts[0][1] < bounds.getWest() || poly.pts[0][1] > bounds.getEast()) return;
           L.polygon(poly.pts, { color: '#00d4ff', weight: 2, fillColor: '#0284c7', fillOpacity: 0.15, interactive: false }).addTo(cablesLayer);
         });
-        const bounds = map.getBounds().pad(0.25);
+        
         fiberNodes.filter(node => bounds.contains([node.lat, node.lng])).slice(0, 350).forEach(node => {
           const isNearest = node.id === nearestNode.id;
           const icon = L.divIcon({
@@ -1251,23 +1186,44 @@
 
       setTimeout(() => {
         if (!certMap) {
-          certMap = L.map('cert-map', { zoomControl: false, attributionControl: false, scrollWheelZoom: false });
-          certDarkLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 19, maxZoom: 21, crossOrigin: 'anonymous' });
-          certLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 19, maxZoom: 21, crossOrigin: 'anonymous' });
+          // MAPA DEL CERTIFICADO BLOQUEADO CONTRA INTERACCIONES
+          certMap = L.map('cert-map', { 
+            zoomControl: false, 
+            attributionControl: false, 
+            scrollWheelZoom: false,
+            dragging: false,
+            touchZoom: false,
+            doubleClickZoom: false,
+            boxZoom: false,
+            keyboard: false
+          });
+          // SOLUCIÓN DE RENDIMIENTO Y CORS: Usar "Dark Matter" solo en el certificado
+          certDarkLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', { maxZoom: 21, crossOrigin: 'anonymous' });
           certDarkLayer.addTo(certMap);
-          certLabelsLayer.addTo(certMap);
           certLayersGroup = L.layerGroup().addTo(certMap);
         }
+        
         certLayersGroup.clearLayers();
+
+        const latThreshold = 0.015;
+        const lngThreshold = 0.015;
+
         footprintPolygons.forEach(poly => {
           if (!poly.pts || poly.pts.length < 3) return;
+          if (Math.abs(poly.pts[0][0] - c.lat) > latThreshold || Math.abs(poly.pts[0][1] - c.lng) > lngThreshold) return;
           L.polygon(poly.pts, { color: '#00d4ff', weight: 2.5, fillColor: '#00d4ff', fillOpacity: 0.22, interactive: false }).addTo(certLayersGroup);
         });
+        
         fiberCables.forEach(cable => {
           if (!cable.pts || cable.pts.length < 2) return;
+          if (cable.bounds) {
+            if (c.lat < cable.bounds.minLat - latThreshold || c.lat > cable.bounds.maxLat + latThreshold ||
+                c.lng < cable.bounds.minLng - lngThreshold || c.lng > cable.bounds.maxLng + lngThreshold) return;
+          }
           L.polyline(cable.pts, { color: '#081a2e', weight: 4.5, opacity: 0.9, interactive: false }).addTo(certLayersGroup);
           L.polyline(cable.pts, { color: '#00d4ff', weight: 2.2, opacity: 0.95, interactive: false }).addTo(certLayersGroup);
         });
+
         const statusColor = c.feasibility === 'FACTIBLE' ? '#10b981' : c.feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
         const clientIcon = L.divIcon({
           className: 'custom-cert-client-icon',
@@ -1284,31 +1240,48 @@
         certLayersGroup.addLayer(L.polyline([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]], { color: '#38bdf8', weight: 3.5, dashArray: '8, 8', opacity: 0.95 }));
         
         certMap.invalidateSize();
-        certMap.fitBounds(L.latLngBounds([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]]), { padding: [60, 60], maxZoom: 18 });
+        certMap.fitBounds(L.latLngBounds([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]]), { padding: [40, 40], maxZoom: 17 });
       }, 150);
     }
 
     function resetCertMapView() {
       if (!certMap || !lastEvaluation) return;
       certMap.invalidateSize();
-      certMap.fitBounds(L.latLngBounds([[lastEvaluation.lat, lastEvaluation.lng], [lastEvaluation.nearestNode.lat, lastEvaluation.nearestNode.lng]]), { padding: [60, 60], maxZoom: 18 });
+      certMap.fitBounds(L.latLngBounds([[lastEvaluation.lat, lastEvaluation.lng], [lastEvaluation.nearestNode.lat, lastEvaluation.nearestNode.lng]]), { padding: [40, 40], maxZoom: 17 });
     }
 
     function closeCertificateModal() { document.getElementById('cert-modal').classList.add('hidden'); document.getElementById('cert-modal').classList.remove('flex'); }
 
+    // SOLUCIÓN 3: DESCARGA INSTANTÁNEA
     async function downloadCertificatePng() {
       const modal = document.getElementById('printable-certificate');
       if (!modal) return;
       const btn = document.getElementById('btn-download-cert');
       const originalBtnText = btn ? btn.innerHTML : '';
-      if (btn) { btn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span>Generando...</span>`; btn.disabled = true; }
+      if (btn) { 
+        btn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span>Generando...</span>`; 
+        btn.disabled = true; 
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 50)); 
+
       const prevOverflow = modal.style.overflow, prevHeight = modal.style.height, prevMaxHeight = modal.style.maxHeight, prevScrollTop = modal.scrollTop;
       try {
         modal.scrollTop = 0; const fullHeight = modal.scrollHeight, fullWidth = modal.scrollWidth;
         modal.style.overflow = 'visible'; modal.style.maxHeight = 'none'; modal.style.height = `${fullHeight}px`;
-        await new Promise(resolve => setTimeout(resolve, 150));
+        
+        await new Promise(resolve => setTimeout(resolve, 250)); 
+
         const canvas = await html2canvas(modal, {
-          useCORS: true, allowTaint: false, logging: false, scale: 2, scrollX: 0, scrollY: 0, windowWidth: fullWidth, windowHeight: fullHeight,
+          useCORS: true, 
+          allowTaint: false, 
+          logging: false, 
+          scale: 1.5,
+          scrollX: 0, 
+          scrollY: 0, 
+          windowWidth: fullWidth, 
+          windowHeight: fullHeight,
+          ignoreElements: (node) => node.classList && node.classList.contains('leaflet-control-container'),
           onclone: (clonedDoc) => {
             const clonedModal = clonedDoc.getElementById('printable-certificate');
             if (clonedModal) { clonedModal.style.overflow = 'visible'; clonedModal.style.maxHeight = 'none'; clonedModal.style.height = 'auto'; clonedModal.style.width = `${modal.offsetWidth}px`; }
@@ -1316,8 +1289,12 @@
         });
         const link = document.createElement('a');
         link.download = `Certificado-ADN-v4.11-${lastEvaluation ? lastEvaluation.lat : '0'}-${lastEvaluation ? lastEvaluation.lng : '0'}.png`;
-        link.href = canvas.toDataURL('image/png'); link.click();
-      } catch (err) { alert('Error al descargar el certificado.'); } finally {
+        link.href = canvas.toDataURL('image/png', 1.0); 
+        link.click();
+      } catch (err) { 
+        console.error(err);
+        alert('Error al capturar la imagen. Intente utilizar la opción Imprimir -> Guardar como PDF si el problema persiste.'); 
+      } finally {
         modal.style.overflow = prevOverflow; modal.style.height = prevHeight; modal.style.maxHeight = prevMaxHeight; modal.scrollTop = prevScrollTop;
         if (btn) { btn.innerHTML = originalBtnText; btn.disabled = false; }
       }
