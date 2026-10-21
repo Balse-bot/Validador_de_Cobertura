@@ -6,7 +6,7 @@
   <title>Validador ADN v4.11 | American Data Networks</title>
   <meta name="description" content="Validador ADN v4.11 | American Data Networks - Sistema oficial de validación de cobertura y factibilidad geodésica FTTH para Costa Rica (GAM)." />
 
-  <!-- Tailwind CSS CDN -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -30,12 +30,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
   
-  <!-- Turf.js (Para cálculos geodésicos de alta precisión) -->
+  <!-- Turf.js (Alta Precisión Matemática) -->
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
   
-  <!-- JSZip -->
+  <!-- JSZip & html2canvas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <!-- html2canvas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
@@ -50,17 +49,11 @@
     .pulsing-pin { animation: pulse-ring 2s infinite ease-in-out; }
 
     .leaflet-popup-content-wrapper {
-      background: #0f172a !important;
-      color: #f8fafc !important;
-      border-radius: 16px !important;
-      border: 1px solid #334155 !important;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7) !important;
-      padding: 4px !important;
+      background: #0f172a !important; color: #f8fafc !important;
+      border-radius: 16px !important; border: 1px solid #334155 !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.7) !important; padding: 4px !important;
     }
-    .leaflet-popup-tip {
-      background: #0f172a !important;
-      border: 1px solid #334155 !important;
-    }
+    .leaflet-popup-tip { background: #0f172a !important; border: 1px solid #334155 !important; }
 
     @media print {
       body * { visibility: hidden; }
@@ -80,7 +73,7 @@
 </head>
 <body class="h-full bg-slate-950 text-slate-100 flex flex-col antialiased selection:bg-blue-500 selection:text-white">
 
-  <!-- Header -->
+  <!-- ENCABEZADO -->
   <header class="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-50 shadow-sm no-print">
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -97,7 +90,6 @@
           <p class="text-[11px] text-slate-400 hidden sm:block">ADN Fibra • San José • Heredia • Cartago • Alajuela (GAM)</p>
         </div>
       </div>
-      
       <div class="flex items-center space-x-2 sm:space-x-3">
         <button onclick="openNodesModal()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 transition border border-slate-700 shadow-sm">
           <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
@@ -109,10 +101,11 @@
 
   <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 no-print lg:overflow-hidden lg:h-[calc(100vh-4.5rem)]">
     
-    <!-- Panel Izquierdo -->
+    <!-- PANEL IZQUIERDO: CONTROLES Y DIAGNÓSTICO -->
     <div class="w-full lg:w-[460px] shrink-0 flex flex-col space-y-4 z-20 lg:h-full lg:overflow-y-auto pb-10 pr-2 custom-scrollbar">
+      
+      <!-- Bloque 1: Controles y Buscador -->
       <div class="bg-slate-900/85 backdrop-blur-2xl rounded-2xl shadow-xl border border-slate-800 p-4 sm:p-5 flex flex-col space-y-3">
-        
         <div class="flex items-center justify-between">
           <h2 class="text-sm font-semibold tracking-tight text-white flex items-center space-x-2">
             <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
@@ -172,10 +165,9 @@
             <div class="text-[11px] text-slate-500 italic py-1">No hay búsquedas recientes.</div>
           </div>
         </div>
-
       </div>
 
-      <!-- Tarjeta de Resultados -->
+      <!-- Bloque 2: Tarjeta de Diagnóstico -->
       <div class="bg-slate-900/85 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-4">
         
         <div class="flex items-center justify-between">
@@ -259,7 +251,7 @@
 
     </div>
 
-    <!-- Mapa Interactivo Principal -->
+    <!-- PANEL DERECHO: MAPA INTERACTIVO PRINCIPAL -->
     <div class="flex-1 flex flex-col z-10">
       <div class="mb-3 flex items-center justify-between">
         <span class="text-xs font-medium text-slate-400 flex items-center space-x-1.5">
@@ -294,6 +286,8 @@
     </div>
 
   </main>
+
+  <!-- MODALES -->
 
   <!-- Modal Inventario Nodos -->
   <div id="nodes-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 no-print">
@@ -405,16 +399,16 @@
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <span>🗺️ Mapa Satelital de Referencia: Coordenada del Cliente y Tendido de Fibra</span>
+              <span>🗺️ Mapa de Referencia: Coordenada del Cliente y Tendido de Fibra</span>
             </span>
           </div>
           
           <div class="relative w-full h-60 sm:h-64 rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-xl">
-            <!-- SOLUCIÓN 1: pointer-events-none para que el mapa sea intocable -->
+            <!-- MAPA BLOQUEADO (pointer-events-none) -->
             <div id="cert-map" class="w-full h-full z-0 pointer-events-none"></div>
           </div>
 
-          <!-- SOLUCIÓN 2: Leyenda reubicada completamente FUERA del mapa -->
+          <!-- LEYENDA MOVIDA AFUERA -->
           <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] mt-2 shadow-sm">
             <div class="flex items-center gap-1.5 font-bold text-white">
               <span id="cert-map-legend-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shrink-0 shadow-sm"></span>
@@ -446,7 +440,6 @@
 
   <!-- Main Script -->
   <script>
-    // Variables Globales
     let fiberNodes = [];
     let fiberCables = [];
     let footprintPolygons = [];
@@ -458,7 +451,7 @@
     let lastEvaluation = null;
 
     let map = null, darkMatterLayer = null, markersLayer = null, cablesLayer = null, connectionsLayer = null;
-    let certMap = null, certDarkLayer = null, certLabelsLayer = null, certLayersGroup = null;
+    let certMap = null, certDarkLayer = null, certLayersGroup = null;
 
     // INDEXED DB PARA RENDIMIENTO
     const DB_NAME = 'ValidadorADN_DB';
@@ -516,60 +509,6 @@
       } catch { return null; }
     }
 
-    function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; 
-      const dLat = ((lat2 - lat1) * Math.PI) / 180;
-      const dLon = ((lon2 - lon1) * Math.PI) / 180;
-      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return Math.round(R * c);
-    }
-
-    function distPointToSegment(pLat, pLng, aLat, aLng, bLat, bLng) {
-      const meanLat = ((pLat + aLat + bLat) / 3) * (Math.PI / 180);
-      const kx = 111320.0 * Math.cos(meanLat);
-      const ky = 110574.0;
-      const ax = (aLng - pLng) * kx, ay = (aLat - pLat) * ky;
-      const bx = (bLng - pLng) * kx, by = (bLat - pLat) * ky;
-      const dx = bx - ax, dy = by - ay;
-      const segLenSq = dx * dx + dy * dy;
-
-      let closestLat, closestLng;
-      if (segLenSq < 1e-6) {
-        closestLat = aLat; closestLng = aLng;
-      } else {
-        const t = Math.max(0, Math.min(1, - (ax * dx + ay * dy) / segLenSq));
-        closestLat = aLat + t * (bLat - aLat);
-        closestLng = aLng + t * (bLng - aLng);
-      }
-      return calculateHaversineDistance(pLat, pLng, closestLat, closestLng);
-    }
-
-    function pointInPolygon(pLat, pLng, polyPts) {
-      if (!polyPts || polyPts.length < 3) return false;
-      let inside = false;
-      const n = polyPts.length;
-      for (let i = 0; i < n; i++) {
-        const j = (i + 1) % n;
-        const yi = polyPts[i][0], xi = polyPts[i][1];
-        const yj = polyPts[j][0], xj = polyPts[j][1];
-        const intersect = ((yi > pLat) !== (yj > pLat)) && (pLng < (xj - xi) * (pLat - yi) / (yj - yi + 1e-12) + xi);
-        if (intersect) inside = !inside;
-      }
-      return inside;
-    }
-
-    function getMinDistanceToPolygonPerimeter(pLat, pLng, polyPts) {
-      if (!polyPts || polyPts.length < 2) return Infinity;
-      let minDist = Infinity;
-      const n = polyPts.length;
-      for (let i = 0; i < n - 1; i++) {
-        const d = distPointToSegment(pLat, pLng, polyPts[i][0], polyPts[i][1], polyPts[i + 1][0], polyPts[i + 1][1]);
-        if (d < minDist) minDist = d;
-      }
-      return minDist;
-    }
-
     function parseKmlPolygons(kmlText) {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(kmlText, 'text/xml');
@@ -592,7 +531,14 @@
               if (!isNaN(lat) && !isNaN(lng)) pts.push([lat, lng]);
             }
           }
-          if (pts.length >= 3) parsed.push({ id: 'HUELLA-' + i, name: name, pts: pts });
+          if (pts.length >= 3) {
+            let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+            pts.forEach(p => {
+              if (p[0] < minLat) minLat = p[0]; if (p[0] > maxLat) maxLat = p[0];
+              if (p[1] < minLng) minLng = p[1]; if (p[1] > maxLng) maxLng = p[1];
+            });
+            parsed.push({ id: 'HUELLA-' + i, name: name, pts: pts, bounds: { minLat, maxLat, minLng, maxLng } });
+          }
         }
       }
       return parsed;
@@ -607,7 +553,14 @@
         const name = (feat.properties && feat.properties.name) ? feat.properties.name : ('Huella ' + idx);
         if (geom.type === 'Polygon' && geom.coordinates && geom.coordinates[0]) {
           const pts = geom.coordinates[0].map(coord => [coord[1], coord[0]]);
-          if (pts.length >= 3) parsed.push({ id: 'HUELLA-GEO-' + idx, name: name, pts: pts });
+          if (pts.length >= 3) {
+            let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+            pts.forEach(p => {
+              if (p[0] < minLat) minLat = p[0]; if (p[0] > maxLat) maxLat = p[0];
+              if (p[1] < minLng) minLng = p[1]; if (p[1] > maxLng) maxLng = p[1];
+            });
+            parsed.push({ id: 'HUELLA-GEO-' + idx, name: name, pts: pts, bounds: { minLat, maxLat, minLng, maxLng } });
+          }
         }
       });
       return parsed;
@@ -637,7 +590,14 @@
                 if (!isNaN(lat) && !isNaN(lng)) polyPts.push([lat, lng]);
               }
             }
-            if (polyPts.length >= 3) parsedPolygons.push({ id: `POLY-${i}`, name, pts: polyPts });
+            if (polyPts.length >= 3) {
+              let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+              polyPts.forEach(p => {
+                if (p[0] < minLat) minLat = p[0]; if (p[0] > maxLat) maxLat = p[0];
+                if (p[1] < minLng) minLng = p[1]; if (p[1] > maxLng) maxLng = p[1];
+              });
+              parsedPolygons.push({ id: `POLY-${i}`, name, pts: polyPts, bounds: { minLat, maxLat, minLng, maxLng } });
+            }
           }
           continue;
         }
@@ -845,19 +805,21 @@
               const poiLat = el.lat || (el.center && el.center.lat);
               const poiLng = el.lon || (el.center && el.center.lon);
               if (poiLat && poiLng) {
-                const d = calculateHaversineDistance(lat, lng, poiLat, poiLng);
+                const pt1 = turf.point([lng, lat]);
+                const pt2 = turf.point([poiLng, poiLat]);
+                const d = turf.distance(pt1, pt2) * 1000;
                 if (d < minDist && d > 2) { minDist = d; closest = { name: el.tags.name, lat: poiLat, lng: poiLng }; }
               }
             });
             if (closest) {
-              const dLon = (lng - closest.lng) * Math.PI / 180;
-              const lat1 = closest.lat * Math.PI / 180, lat2 = lat * Math.PI / 180;
-              const y = Math.sin(dLon) * Math.cos(lat2);
-              const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-              let brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360; 
-              brng = (brng + 180) % 360; 
+              const pt1 = turf.point([closest.lng, closest.lat]);
+              const pt2 = turf.point([lng, lat]);
+              let brng = turf.bearing(pt1, pt2);
+              brng = (brng + 360) % 360; 
+              
               let cardinal = "Norte";
               if (brng >= 337.5 || brng < 22.5) cardinal = "Norte"; else if (brng >= 22.5 && brng < 67.5) cardinal = "Noreste"; else if (brng >= 67.5 && brng < 112.5) cardinal = "Este"; else if (brng >= 112.5 && brng < 157.5) cardinal = "Sureste"; else if (brng >= 157.5 && brng < 202.5) cardinal = "Sur"; else if (brng >= 202.5 && brng < 247.5) cardinal = "Suroeste"; else if (brng >= 247.5 && brng < 292.5) cardinal = "Oeste"; else if (brng >= 292.5 && brng < 337.5) cardinal = "Noroeste";
+              
               if (minDist <= 15) return `Sobre ${geoInfo.exactStreet}, frente o contiguo a ${closest.name}.`;
               const roundedDist = Math.round(minDist / 5) * 5;
               let referenceStr = `De ${closest.name}, aprox. ${roundedDist} metros al ${cardinal}`;
@@ -874,7 +836,9 @@
     async function evaluateCoordinates(lat, lng, sourceName = '') {
       if (fiberNodes.length === 0) { alert("Aún no hay nodos cargados. Por favor espere o suba el archivo de red."); return; }
       currentLat = lat; currentLng = lng;
-      document.getElementById('coords-badge').innerText = `Lat: ${lat} • Lng: ${lng}`;
+      
+      const coordsBadge = document.getElementById('coords-badge');
+      if (coordsBadge) coordsBadge.innerText = `Lat: ${lat} • Lng: ${lng}`;
       
       document.getElementById('res-prov-canton').innerText = "Cargando ubicación...";
       document.getElementById('res-dist-barrio').innerText = "...";
@@ -882,6 +846,8 @@
       document.getElementById('res-colloquial').innerText = "Buscando referencias exactas...";
 
       const clientPt = turf.point([lng, lat]);
+      
+      // FILTRO ESPACIAL EXTREMO PARA RENDIMIENTO 0 LAG
       const latThreshold = 0.015, lngThreshold = 0.015;
 
       let nearbyNodes = fiberNodes.filter(n => Math.abs(n.lat - lat) < latThreshold && Math.abs(n.lng - lng) < lngThreshold);
@@ -914,6 +880,15 @@
       
       for (const poly of footprintPolygons) {
         if (!poly.pts || poly.pts.length < 3) continue;
+        
+        // FILTRO ESPACIAL PARA POLÍGONOS (Evita lag al calcular)
+        if (poly.bounds) {
+          if (lat < poly.bounds.minLat - latThreshold || lat > poly.bounds.maxLat + latThreshold ||
+              lng < poly.bounds.minLng - lngThreshold || lng > poly.bounds.maxLng + lngThreshold) {
+            continue;
+          }
+        }
+
         const coords = poly.pts.map(p => [p[1], p[0]]); 
         if (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1]) coords.push(coords[0]);
         const polygonFeature = turf.polygon([coords]);
@@ -1050,8 +1025,10 @@
         });
         footprintPolygons.forEach(poly => {
           if (!poly.pts || poly.pts.length < 3) return;
-          if (poly.pts[0][0] < bounds.getSouth() || poly.pts[0][0] > bounds.getNorth() ||
-              poly.pts[0][1] < bounds.getWest() || poly.pts[0][1] > bounds.getEast()) return;
+          if (poly.bounds) {
+            if (poly.bounds.maxLat < bounds.getSouth() || poly.bounds.minLat > bounds.getNorth() ||
+                poly.bounds.maxLng < bounds.getWest() || poly.bounds.minLng > bounds.getEast()) return;
+          }
           L.polygon(poly.pts, { color: '#00d4ff', weight: 2, fillColor: '#0284c7', fillOpacity: 0.15, interactive: false }).addTo(cablesLayer);
         });
         
@@ -1186,7 +1163,7 @@
 
       setTimeout(() => {
         if (!certMap) {
-          // MAPA DEL CERTIFICADO BLOQUEADO CONTRA INTERACCIONES
+          // MAPA DEL CERTIFICADO (Capa Oscura sin CORS) TOTALMENTE BLOQUEADO
           certMap = L.map('cert-map', { 
             zoomControl: false, 
             attributionControl: false, 
@@ -1197,7 +1174,7 @@
             boxZoom: false,
             keyboard: false
           });
-          // SOLUCIÓN DE RENDIMIENTO Y CORS: Usar "Dark Matter" solo en el certificado
+          
           certDarkLayer = L.tileLayer('https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_all/{z}/{x}/{y}.png', { maxZoom: 21, crossOrigin: 'anonymous' });
           certDarkLayer.addTo(certMap);
           certLayersGroup = L.layerGroup().addTo(certMap);
@@ -1252,7 +1229,7 @@
 
     function closeCertificateModal() { document.getElementById('cert-modal').classList.add('hidden'); document.getElementById('cert-modal').classList.remove('flex'); }
 
-    // SOLUCIÓN 3: DESCARGA INSTANTÁNEA
+    // DESCARGA INSTANTÁNEA (Scale 1.5 y Capa Oscura)
     async function downloadCertificatePng() {
       const modal = document.getElementById('printable-certificate');
       if (!modal) return;
