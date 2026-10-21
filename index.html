@@ -18,12 +18,7 @@
           },
           colors: {
             brand: {
-              50: '#eff6ff',
-              100: '#dbeafe',
-              400: '#60a5fa',
-              500: '#3b82f6',
-              600: '#2563eb',
-              700: '#1d4ed8',
+              50: '#eff6ff', 100: '#dbeafe', 400: '#60a5fa', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8',
             }
           }
         }
@@ -32,11 +27,15 @@
   </script>
 
   <!-- Leaflet CSS & JS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <!-- JSZip for KMZ extraction -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  
+  <!-- Turf.js (Para cálculos geodésicos de alta precisión) -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+  
+  <!-- JSZip -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <!-- html2canvas for map certificate snapshot -->
+  <!-- html2canvas -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <style>
@@ -50,7 +49,6 @@
     }
     .pulsing-pin { animation: pulse-ring 2s infinite ease-in-out; }
 
-    /* Custom Leaflet popup styling (Dark Matter) */
     .leaflet-popup-content-wrapper {
       background: #0f172a !important;
       color: #f8fafc !important;
@@ -64,40 +62,25 @@
       border: 1px solid #334155 !important;
     }
 
-    /* Print styles */
     @media print {
       body * { visibility: hidden; }
       #printable-certificate, #printable-certificate * { visibility: visible; }
       #printable-certificate {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        background: white !important;
-        color: black !important;
+        position: absolute; left: 0; top: 0; width: 100%;
+        background: white !important; color: black !important;
       }
       .no-print { display: none !important; }
     }
 
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(15, 23, 42, 0.6);
-      border-radius: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(59, 130, 246, 0.4);
-      border-radius: 8px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-      background: rgba(59, 130, 246, 0.7);
-    }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(59, 130, 246, 0.4); border-radius: 8px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, 0.7); }
   </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-100 flex flex-col antialiased selection:bg-blue-500 selection:text-white">
 
-  <!-- Top Navigation Bar (American Data Networks) -->
+  <!-- Header -->
   <header class="bg-slate-900/90 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-50 shadow-sm no-print">
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -120,19 +103,13 @@
           <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
           <span id="nodos-count-btn">Inventario (<span id="nodes-count-number">0</span>)</span>
         </button>
-
-        <button onclick="openCertificateModal()" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 transition border border-blue-500/50 shadow-md">
-          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-          <span class="hidden sm:inline">Certificado Oficial</span>
-        </button>
       </div>
     </div>
   </header>
 
-  <!-- Main Split-Screen Layout -->
   <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 no-print lg:overflow-hidden lg:h-[calc(100vh-4.5rem)]">
     
-    <!-- Left Control & Evaluation Panel -->
+    <!-- Panel Izquierdo -->
     <div class="w-full lg:w-[460px] shrink-0 flex flex-col space-y-4 z-20 lg:h-full lg:overflow-y-auto pb-10 pr-2 custom-scrollbar">
       <div class="bg-slate-900/85 backdrop-blur-2xl rounded-2xl shadow-xl border border-slate-800 p-4 sm:p-5 flex flex-col space-y-3">
         
@@ -147,74 +124,43 @@
           </button>
         </div>
 
-        <!-- THE SINGLE PROMINENT NODES VISIBILITY TOGGLE (DEFAULT: OFF) -->
         <div class="bg-gradient-to-r from-slate-800/90 to-slate-900/90 p-2.5 rounded-xl border border-blue-500/30 shadow-lg flex items-center justify-between">
           <div class="flex items-center space-x-3 text-xs text-slate-200">
             <div id="toggle-icon-box" class="p-2.5 rounded-xl bg-amber-500/20 text-amber-400">
               <svg id="toggle-icon-svg" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path></svg>
             </div>
             <div>
-              <span class="font-bold text-sm text-white block">Visualización de Nodos en Mapa</span>
+              <span class="font-bold text-sm text-white block">Visualización de Red en Mapa</span>
               <span id="toggle-status-desc" class="text-[11px] text-amber-300 block mt-0.5 font-medium">
-                🔴 APAGADA (Recomendado: Búsqueda fluida sin lag)
+                🔴 APAGADA (Muestra solo nodo cercano)
               </span>
             </div>
           </div>
-          <button 
-            id="btn-panel-toggle-nodes"
-            onclick="toggleNodesVisibility()" 
-            class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600"
-          >
+          <button id="btn-panel-toggle-nodes" onclick="toggleNodesVisibility()" class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600">
             OFF (Oculto)
           </button>
         </div>
 
-        <!-- Unified Smart Search Bar -->
-        <div class="space-y-1.5">
+        <div class="space-y-1.5 pt-2">
           <label class="text-[11px] font-medium text-slate-400 flex items-center space-x-1">
             <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-            <span>Buscador Inteligente (Coordenadas o Link Waze / Maps)</span>
+            <span>Buscador Inteligente (Coordenadas o Link Maps)</span>
           </label>
-          <div class="relative">
-            <input 
-              type="text" 
-              id="smart-search-input" 
-              oninput="handleSmartSearch(this.value)"
-              placeholder="Ej: 10.018194, -84.216833 o link de Maps/Waze..." 
-              class="w-full px-4 py-3 rounded-2xl border border-slate-700 bg-slate-800/90 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner pr-10 font-mono"
-            />
-            <div class="absolute right-3.5 top-3 text-slate-400 pointer-events-none">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          <div class="flex items-center space-x-2">
+            <div class="relative flex-1">
+              <input type="text" id="smart-search-input" onkeydown="if(event.key === 'Enter') triggerSearch()" placeholder="Ej: 10.018194, -84.216833 o link..." class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-800/90 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none transition shadow-inner pr-10 font-mono" />
+              <div class="absolute right-3.5 top-3 text-slate-400 pointer-events-none">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </div>
             </div>
+            <button onclick="triggerSearch()" class="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition">
+              Buscar
+            </button>
           </div>
           <p id="search-error" class="text-[10px] text-rose-400 hidden"></p>
         </div>
 
-        <!-- Presets Selector GAM -->
-        <div>
-          <label class="block text-[11px] font-medium text-slate-400 mb-1">
-            Zonas Principales GAM (Costa Rica)
-          </label>
-          <select 
-            id="preset-selector" 
-            onchange="handlePresetSelect(this.value)"
-            class="w-full px-3 py-2.5 rounded-xl border border-slate-700 bg-slate-800/80 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none transition"
-          >
-            <option value="">Seleccione una zona rápida...</option>
-            <option value="10.018194,-84.216833">📍 Alajuela Centro (Prueba A03-R06-07 • Huella 94m)</option>
-            <option value="9.9380,-84.1120">Parque Metropolitano La Sabana, San José</option>
-            <option value="9.9310,-84.0620">Barrio Los Yoses / San Pedro, Montes de Oca</option>
-            <option value="9.9402,-84.1445">Multiplaza Escazú / Guachipelín, Escazú</option>
-            <option value="10.0010,-84.1130">Parque Central de Heredia, Heredia</option>
-            <option value="10.0180,-84.2140">Parque Central de Alajuela, Alajuela</option>
-            <option value="9.8660,-83.9160">Ruinas de Cartago / Centro, Cartago</option>
-            <option value="9.9320,-84.1850">Santa Ana Centro / Pozos, Santa Ana</option>
-            <option value="9.9234,-84.0321">Curridabat Centro / Cipreses, Curridabat</option>
-          </select>
-        </div>
-
-        <!-- Recent Search History -->
-        <div class="space-y-2 pt-2 border-t border-slate-800">
+        <div class="space-y-2 pt-3 border-t border-slate-800 mt-2">
           <div class="flex items-center justify-between">
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
               <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -222,14 +168,14 @@
             </span>
             <button onclick="clearHistory()" class="text-[10px] text-slate-500 hover:text-rose-400 transition font-medium">Borrar</button>
           </div>
-          <div id="history-list" class="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+          <div id="history-list" class="space-y-1.5 max-h-28 overflow-y-auto pr-1 custom-scrollbar">
             <div class="text-[11px] text-slate-500 italic py-1">No hay búsquedas recientes.</div>
           </div>
         </div>
 
       </div>
 
-      <!-- Feasibility & Geographic Results Card (REPLICA ORIGINAL AMERICAN DATA NETWORKS) -->
+      <!-- Tarjeta de Resultados -->
       <div class="bg-slate-900/85 backdrop-blur-2xl rounded-3xl shadow-2xl border border-slate-800 p-6 flex flex-col space-y-4">
         
         <div class="flex items-center justify-between">
@@ -242,102 +188,70 @@
           </span>
         </div>
 
-        <!-- Feasibility Status Banner - Original American Data Style -->
         <div id="status-card" class="p-5 rounded-2xl border bg-amber-500/10 border-amber-500/30 flex items-start space-x-3.5 transition-all duration-300 shadow-inner">
           <div id="status-icon" class="mt-0.5 shrink-0">
             <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
           </div>
           <div class="w-full space-y-1.5">
-            <!-- Título: "Al borde" (en naranja) o "Con cobertura" (en verde) o "Sin cobertura" (en rojo) -->
-            <div id="status-title" class="text-lg font-black tracking-tight text-amber-400">
-              Al borde
-            </div>
-            <!-- Subtítulo: "Está a [X] metros de la red. Hace falta el estudio para confirmarlo." -->
-            <p id="status-desc" class="text-xs text-slate-200 leading-relaxed font-medium">
-              Está a 121 metros de la red. Hace falta el estudio para confirmarlo.
-            </p>
-            <!-- Texto secundario: "Condominio más cercano: [Nombre] (a [X] m)" -->
-            <div id="status-condo-sec" class="text-[11px] text-slate-400 pt-1.5 border-t border-slate-700/60 mt-2 font-medium">
-              Condominio más cercano: Ninguno registrado en la zona inmediata
-            </div>
+            <div id="status-title" class="text-lg font-black tracking-tight text-amber-400">Esperando coordenadas...</div>
+            <p id="status-desc" class="text-xs text-slate-200 leading-relaxed font-medium">Ingrese una ubicación o haga clic en el mapa para evaluar.</p>
+            <div id="status-condo-sec" class="text-[11px] text-slate-400 pt-1.5 border-t border-slate-700/60 mt-2 font-medium">Condominio más cercano: ---</div>
           </div>
         </div>
 
-        <!-- Operational Alert for Private Condos / Gated Communities -->
         <div id="condo-alert-box" class="p-3 rounded-2xl border bg-amber-500/15 border-amber-500/30 text-amber-300 text-xs hidden flex items-start space-x-2">
           <svg class="w-4 h-4 text-amber-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
           <span id="condo-alert-text" class="leading-relaxed"></span>
         </div>
 
-        <!-- Detailed Metrics Grid (Perpendicular Footprint, Nearest Node, Cable & Routing) -->
         <div class="grid grid-cols-2 gap-3 pt-1">
           <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Huella FTTH</span>
-            <span id="res-huella-status" class="text-xs font-black text-amber-400 mt-1 block">
-              afuera, a 94 m del borde 🟠
-            </span>
+            <span id="res-huella-status" class="text-xs font-black text-white mt-1 block">---</span>
             <span class="text-[10px] text-slate-400 block mt-0.5">Perímetro Geodésico</span>
           </div>
-
           <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Nodo Más Cercano</span>
-            <span id="res-node-dist" class="text-xs font-black text-white mt-1 block">
-              A03-R06-07 → 175 m
-            </span>
-            <span id="res-node-name" class="text-[10px] text-blue-400 block truncate mt-0.5">
-              Cierre Asignado
-            </span>
+            <span id="res-node-dist" class="text-xs font-black text-white mt-1 block">---</span>
+            <span id="res-node-name" class="text-[10px] text-blue-400 block truncate mt-0.5">---</span>
           </div>
-
           <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Tendido de Red</span>
-            <span id="res-cable-dist" class="text-xs font-black text-cyan-300 mt-1 block">
-              tendido a 121 m
-            </span>
+            <span id="res-cable-dist" class="text-xs font-black text-cyan-300 mt-1 block">---</span>
             <span class="text-[10px] text-slate-400 block mt-0.5">Cable Troncal</span>
           </div>
-
           <div class="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/80">
             <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Recorrido Estimado</span>
-            <span id="res-routing-estimate" class="text-xs font-black text-white mt-1 block">
-              ~210 – 280 m
-            </span>
+            <span id="res-routing-estimate" class="text-xs font-black text-white mt-1 block">---</span>
             <span class="text-[10px] text-slate-400 block mt-0.5">Acometida FO</span>
           </div>
         </div>
 
-        <!-- Geographic Territorial Resolution -->
         <div class="bg-slate-800/40 p-3.5 rounded-2xl border border-slate-700/60 space-y-1.5 text-xs">
           <div class="flex justify-between items-center text-slate-400 text-[10px] font-bold uppercase tracking-wider">
             <span>Ubicación Georreferenciada</span>
             <span class="text-blue-400 font-mono">Costa Rica</span>
           </div>
-          <div class="text-slate-200 font-semibold" id="res-prov-canton">San José, San José</div>
-          <div class="text-slate-400 text-[11px]" id="res-dist-barrio">Pavas, Sabana Norte</div>
+          <div class="text-slate-200 font-semibold" id="res-prov-canton">---</div>
+          <div class="text-slate-400 text-[11px]" id="res-dist-barrio">---</div>
           <div class="text-slate-400 text-[11px] pt-1 border-t border-slate-800 flex items-center justify-between">
-            <span>Vía: <b id="res-exact-street" class="text-slate-300">Calle Principal</b></span>
+            <span>Vía: <b id="res-exact-street" class="text-slate-300">---</b></span>
             <span id="res-condo-row" class="hidden text-purple-400 font-medium">🏢 <span id="res-condo-details"></span></span>
           </div>
-          <div class="text-[10px] text-slate-400 italic pt-1 border-t border-slate-800" id="res-colloquial">
-            "Aprox. 25m al norte del Nodo Central Sabana"
-          </div>
+          <div class="text-[10px] text-slate-400 italic pt-1 border-t border-slate-800" id="res-colloquial">---</div>
         </div>
 
-        <!-- Subsequent Backup Nodes List -->
         <div class="bg-slate-800/40 p-3 rounded-2xl border border-slate-700/60 space-y-1.5 text-xs">
           <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block flex items-center space-x-1">
             <svg class="w-3.5 h-3.5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
             <span>Nodos de Respaldo Cercanos:</span>
           </span>
           <div id="subsequent-nodes-list" class="space-y-1 pt-1">
-            <!-- Dynamically populated -->
+            <div class="text-[10px] text-slate-500 italic">Esperando evaluación...</div>
           </div>
         </div>
 
-        <button 
-          onclick="openCertificateModal()"
-          class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/25 transition"
-        >
+        <button onclick="openCertificateModal()" class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold text-xs flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/25 transition">
           <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
           <span>Generar Certificado Oficial de Factibilidad</span>
         </button>
@@ -345,39 +259,30 @@
 
     </div>
 
-    <!-- Right Interactive Map Panel (CARTO DARK MATTER + BRIGHT BLUE CABLES) -->
+    <!-- Mapa Interactivo Principal -->
     <div class="flex-1 flex flex-col z-10">
       <div class="mb-3 flex items-center justify-between">
         <span class="text-xs font-medium text-slate-400 flex items-center space-x-1.5">
-          <span>🗺️ Mapa Dark Matter & Tendido de Fibra (Haz clic para evaluar)</span>
+          <span>🗺️ Mapa Satelital de Cobertura (Haz clic para evaluar)</span>
         </span>
         <span id="coords-badge" class="text-xs font-mono bg-slate-900/80 border border-slate-800 text-blue-400 px-3 py-1 rounded-full shadow-inner">
-          Lat: 9.9380 • Lng: -84.1120
+          Esperando GPS...
         </span>
       </div>
       
       <div class="flex-1 w-full h-[400px] lg:h-full rounded-3xl overflow-hidden shadow-2xl border border-slate-800 relative flex flex-col">
         <div id="map" class="w-full flex-1 relative z-0"></div>
 
-        <!-- Map Layer Controls Toolbar -->
-        <div class="absolute top-4 left-4 z-[400] bg-slate-900/90 backdrop-blur-xl p-1.5 rounded-2xl shadow-xl border border-slate-800 flex flex-wrap gap-1.5">
-          <button onclick="setMapLayer('dark')" id="btn-dark" class="px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition">Dark Matter</button>
-          <button onclick="setMapLayer('streets')" id="btn-str" class="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition">Calles</button>
-        </div>
-
-        <!-- Map Legend -->
-        <div class="absolute bottom-10 left-4 z-[400] bg-slate-900/90 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-xl border border-slate-800 text-xs text-slate-300 space-y-2 hidden sm:block">
+        <div class="absolute bottom-10 right-4 z-[400] bg-slate-900/90 backdrop-blur-xl px-4 py-3 rounded-2xl shadow-xl border border-slate-800 text-xs text-slate-300 space-y-2 hidden sm:block">
           <div class="font-bold text-white mb-1">Leyenda de Cobertura GAM</div>
           <div class="flex items-center space-x-2"><div class="w-3.5 h-1 bg-cyan-400 rounded-full shadow-sm"></div><span>Tendido de Fibra (Líneas Azules)</span></div>
           <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-blue-500"></div><span>Nodo / Cierre Asignado (⚡)</span></div>
           <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div><span>Punto Consultado (📍)</span></div>
-          <div class="flex items-center space-x-2"><div class="w-3 h-3 rounded-full bg-purple-500"></div><span>Condominio Residencial (🏢)</span></div>
           <div class="text-[10px] text-slate-400 pt-1 border-t border-slate-700/80">
-            <span id="legend-nodes-state">Capa general de nodos: Desactivada</span>
+            <span id="legend-nodes-state">Capa general de red: Desactivada</span>
           </div>
         </div>
 
-        <!-- MANDATORY MAP FOOTER -->
         <div class="bg-slate-900/95 border-t border-slate-800 py-2.5 px-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-400 gap-1.5 z-10">
           <div class="flex items-center space-x-1.5 text-cyan-400 font-semibold">
             <span class="inline-block w-3.5 h-1 bg-cyan-400 rounded-full shadow-sm"></span>
@@ -386,13 +291,11 @@
           <span class="font-semibold text-slate-300">Validador ADN v4.11 | American Data Networks</span>
         </div>
       </div>
-
-
     </div>
 
   </main>
 
-  <!-- Nodes Inventory Modal -->
+  <!-- Modal Inventario Nodos -->
   <div id="nodes-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4 no-print">
     <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 w-full max-w-3xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
       <div class="p-5 border-b border-slate-800 flex items-center justify-between">
@@ -410,19 +313,13 @@
         </button>
       </div>
       <div class="p-4 border-b border-slate-800 bg-slate-900/50">
-        <input 
-          type="text" 
-          id="modal-search-input" 
-          oninput="filterNodesModal(this.value)" 
-          placeholder="Filtrar por nombre, código, cantón o provincia..." 
-          class="w-full px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-        />
+        <input type="text" id="modal-search-input" oninput="filterNodesModal(this.value)" placeholder="Filtrar por nombre, código, cantón o provincia..." class="w-full px-3.5 py-2 rounded-xl border border-slate-700 bg-slate-800 text-white text-xs focus:ring-2 focus:ring-blue-500 outline-none" />
       </div>
       <div class="p-5 overflow-y-auto flex-1 space-y-2.5" id="nodes-modal-list"></div>
     </div>
   </div>
 
-  <!-- Official Certificate Modal with Enhanced HTML2Canvas Capture -->
+  <!-- Modal Certificado Oficial -->
   <div id="cert-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center p-4">
     <div class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 w-full max-w-3xl max-h-[94vh] flex flex-col overflow-hidden">
       
@@ -451,10 +348,9 @@
         </div>
       </div>
       
-      <!-- Certificate Printable & Capturable Body (American Data Networks) -->
+      <!-- Cuerpo del Certificado -->
       <div id="printable-certificate" class="p-6 space-y-4 overflow-y-auto flex-1 bg-slate-900 text-white font-sans custom-scrollbar">
         
-        <!-- Header Banner -->
         <div class="border-b border-slate-800 pb-5 flex justify-between items-start">
           <div class="flex items-center space-x-3">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-black text-base shadow-lg shadow-blue-500/30">
@@ -471,7 +367,6 @@
           </div>
         </div>
 
-        <!-- Certificate Status Banner (Original American Data Style) -->
         <div id="cert-status-banner" class="p-4 rounded-2xl border flex items-center space-x-3 shadow-inner">
           <div id="cert-status-icon"></div>
           <div>
@@ -481,11 +376,8 @@
           </div>
         </div>
 
-        <!-- Condo Alert in Certificate if applicable -->
-        <div id="cert-condo-alert" class="p-3 rounded-2xl border bg-amber-500/10 border-amber-500/30 text-amber-300 text-xs hidden leading-relaxed">
-        </div>
+        <div id="cert-condo-alert" class="p-3 rounded-2xl border bg-amber-500/10 border-amber-500/30 text-amber-300 text-xs hidden leading-relaxed"></div>
 
-        <!-- Metrics & Infrastructure Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
           <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/80 space-y-2">
             <span class="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block border-b border-slate-700/60 pb-1.5 mb-2 flex items-center gap-1.5"><span>📍</span><span>Datos de Ubicación</span></span>
@@ -509,209 +401,83 @@
           </div>
         </div>
 
-        <!-- Dedicated Georeferenced Map View (CartoDB Dark Matter with Bright Blue Lines) -->
+        <!-- Mapa del Certificado -->
         <div class="space-y-1.5">
           <div class="flex items-center justify-between">
             <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <span>🗺️ Mapa Georreferenciado: Coordenada del Cliente y Tendido de Fibra</span>
+              <span>🗺️ Mapa Satelital de Referencia: Coordenada del Cliente y Tendido de Fibra</span>
             </span>
             <div class="flex items-center space-x-2 print:hidden">
-              <button type="button" onclick="resetCertMapView()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition flex items-center space-x-1 shadow-sm" title="Centrar en la ruta entre coordenada y red">
+              <button type="button" onclick="resetCertMapView()" class="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-[11px] font-medium text-slate-300 border border-slate-700 transition flex items-center space-x-1 shadow-sm">
                 <span>🎯 Centrar Traza</span>
               </button>
             </div>
           </div>
           
           <div class="relative w-full h-60 sm:h-64 rounded-2xl overflow-hidden border border-slate-700/80 bg-slate-950 shadow-2xl">
-            <!-- Dedicated Leaflet Map Instance -->
             <div id="cert-map" class="w-full h-full z-0"></div>
+          </div>
 
-            <!-- Sleek On-Map HUD Legend Overlay -->
-            <div class="absolute bottom-3 left-3 z-[400] bg-slate-900/90 backdrop-blur-md px-3 py-2 rounded-xl border border-slate-700/80 shadow-lg text-[10px] space-y-1 max-w-[290px]">
-              <div class="flex items-center gap-1.5 font-bold text-white">
-                <span id="cert-map-legend-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shrink-0 shadow-sm"></span>
-                <span class="truncate">📍 Cliente: <span id="cert-map-legend-coords" class="font-mono text-cyan-300"></span></span>
-              </div>
-              <div class="flex items-center gap-1.5 font-bold text-white">
-                <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shrink-0 shadow-sm"></span>
-                <span class="truncate">⚡ Red: <span id="cert-map-legend-node" class="text-blue-300"></span></span>
-              </div>
-              <div class="flex items-center gap-1.5 text-slate-300 pt-0.5 border-t border-slate-800">
-                <span class="text-cyan-400">📏</span>
-                <span>Distancia: <b id="cert-map-legend-dist" class="text-white"></b> (<span id="cert-map-legend-routing"></span>)</span>
-              </div>
-              <div class="text-[9px] text-amber-300 font-medium" id="cert-map-legend-huella">
-                <!-- Huella FTTH -->
-              </div>
+          <!-- LEYENDA MOVIDA FUERA DEL MAPA -->
+          <div class="bg-slate-800/80 border border-slate-700/80 rounded-xl p-3 flex flex-wrap items-center gap-x-6 gap-y-2 text-[10px] mt-2">
+            <div class="flex items-center gap-1.5 font-bold text-white">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block shrink-0 shadow-sm"></span>
+              <span>📍 Cliente: <span id="cert-map-legend-coords" class="text-cyan-300 font-mono"></span></span>
+            </div>
+            <div class="flex items-center gap-1.5 font-bold text-white">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block shrink-0 shadow-sm"></span>
+              <span>⚡ Red: <span id="cert-map-legend-node" class="text-blue-300"></span></span>
+            </div>
+            <div class="flex items-center gap-1.5 text-slate-300">
+              <span class="text-cyan-400">📏</span>
+              <span>Distancia: <b id="cert-map-legend-dist" class="text-white"></b> (<span id="cert-map-legend-routing"></span>)</span>
             </div>
           </div>
 
-          <!-- MANDATORY MAP NOTE UNDER CERTIFICATE MAP CONTAINER -->
           <div class="text-[11px] text-cyan-400 font-medium flex items-center gap-1.5 px-1 pt-1">
             <span class="w-3 h-0.5 bg-cyan-400 rounded-full inline-block"></span>
             <span>Las líneas azules son el tendido de fibra, no área de cobertura.</span>
           </div>
         </div>
 
-        <!-- Certificate Formal Footer Note -->
         <div class="text-[11px] text-slate-400 pt-3 border-t border-slate-800 space-y-1">
-          <p>
-            <b>Nota técnica:</b> Este certificado valida la factibilidad de conexión mediante el motor geodésico de American Data Networks (fórmula geodésica de Haversine y proyección ortogonal sobre aristas de tendidos FTTH) y el inventario georreferenciado de la Gran Área Metropolitana (GAM). Distancias de 30m a 400m son clasificadas en estudio preliminar sujetas a inspección visual de posteo y disponibilidad de puertos en caja de empalme.
-          </p>
-          <p class="text-center pt-2 font-semibold text-slate-300">
-            Validador ADN v4.11 | American Data Networks • Red Nacional FTTH
-          </p>
+          <p><b>Nota técnica:</b> Este certificado valida la factibilidad de conexión mediante el motor geodésico de American Data Networks y el inventario georreferenciado de la GAM. Distancias de 30m a 400m son clasificadas en estudio preliminar sujetas a inspección visual.</p>
+          <p class="text-center pt-2 font-semibold text-slate-300">Validador ADN v4.11 | American Data Networks • Red Nacional FTTH</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Main Application Script -->
+  <!-- Main Script -->
   <script>
-    // Global Datastores
-    let fiberNodes = [
-      { id: "NODE-A03-R06-07", name: "A03-R06-07", province: "Alajuela", canton: "Alajuela", district: "Alajuela", lat: 10.01973676, lng: -84.21715014, capacityGbps: 100, status: "Activo", code: "A03-R06-07" },
-      { id: "NODE-A03-R07-06", name: "A03-R07-06", province: "Alajuela", canton: "Alajuela", district: "Alajuela", lat: 10.01681404, lng: -84.21778791, capacityGbps: 100, status: "Activo", code: "A03-R07-06" },
-      { id: "NODE-A03-R07-07", name: "A03-R07-07", province: "Alajuela", canton: "Alajuela", district: "Alajuela", lat: 10.01669518, lng: -84.21619200, capacityGbps: 100, status: "Activo", code: "A03-R07-07" },
-      { id: "NODE-SJO-01", name: "Nodo Central Sabana", province: "San José", canton: "San José", district: "Pavas", lat: 9.9380, lng: -84.1120, capacityGbps: 100, status: "Activo", code: "SJO-SAB-01" },
-      { id: "NODE-SJO-02", name: "Nodo Los Yoses FO", province: "San José", canton: "San José", district: "Catedral", lat: 9.9310, lng: -84.0620, capacityGbps: 80, status: "Activo", code: "SJO-YOS-02" },
-      { id: "NODE-SJO-03", name: "Nodo Escazú Multiplaza", province: "San José", canton: "Escazú", district: "San Rafael", lat: 9.9402, lng: -84.1445, capacityGbps: 100, status: "Activo", code: "SJO-ESC-03" },
-      { id: "NODE-HER-01", name: "Nodo Heredia Centro", province: "Heredia", canton: "Heredia", district: "Heredia", lat: 10.0010, lng: -84.1130, capacityGbps: 100, status: "Activo", code: "HER-CTR-01" },
-      { id: "NODE-HER-02", name: "Nodo San Francisco Heredia", province: "Heredia", canton: "Heredia", district: "San Francisco", lat: 9.9912, lng: -84.1350, capacityGbps: 100, status: "Activo", code: "HER-SFR-02" },
-      { id: "NODE-ALA-01", name: "Nodo Alajuela Parque Central", province: "Alajuela", canton: "Alajuela", district: "Alajuela", lat: 10.0180, lng: -84.2140, capacityGbps: 90, status: "Activo", code: "ALA-CTR-01" },
-      { id: "NODE-CAR-01", name: "Nodo Cartago Ruinas", province: "Cartago", canton: "Cartago", district: "Oriental", lat: 9.8660, lng: -83.9160, capacityGbps: 100, status: "Activo", code: "CAR-RUI-01" },
-      { id: "NODE-SNA-01", name: "Nodo Santa Ana Pozos", province: "San José", canton: "Santa Ana", district: "Pozos", lat: 9.9320, lng: -84.1850, capacityGbps: 100, status: "Activo", code: "SJO-SNA-01" },
-      { id: "NODE-CUR-01", name: "Nodo Curridabat Cipreses", province: "San José", canton: "Curridabat", district: "Curridabat", lat: 9.9234, lng: -84.0321, capacityGbps: 90, status: "Activo", code: "SJO-CUR-01" }
-    ];
+    // Variables Globales
+    let fiberNodes = [];
+    let fiberCables = [];
+    let footprintPolygons = [];
+    let condominiums = [];
 
-    let fiberCables = [
-      {
-        id: "CABLE-A03-01",
-        name: "Fiber Cable: A03-R07-06 // A03-R07-07 (12)",
-        pts: [
-          [10.01681404, -84.21778791],
-          [10.01682909, -84.21774110],
-          [10.01719888, -84.21633160],
-          [10.01669518, -84.21619200]
-        ]
-      },
-      {
-        id: "CABLE-SJO-01",
-        name: "Tendido Troncal Sabana FO",
-        pts: [
-          [9.9370, -84.1130],
-          [9.9380, -84.1120],
-          [9.9390, -84.1105]
-        ]
-      }
-    ];
-
-        const DEFAULT_FOOTPRINTS = [
-      {
-        id: "HUELLA-ALA-01",
-        name: "Huella FTTH Alajuela - A03",
-        pts: [
-          [10.019500, -84.215976],
-          [10.016500, -84.215976],
-          [10.016000, -84.214000],
-          [10.018500, -84.213200],
-          [10.020200, -84.214500],
-          [10.019500, -84.215976]
-        ]
-      },
-      {
-        id: "HUELLA-SJ-01",
-        name: "Huella FTTH San José - Sabana y Rohrmoser",
-        pts: [
-          [9.9450, -84.1250],
-          [9.9410, -84.1080],
-          [9.9320, -84.1060],
-          [9.9340, -84.1240],
-          [9.9450, -84.1250]
-        ]
-      },
-      {
-        id: "HUELLA-SJ-02",
-        name: "Huella FTTH San Pedro - Los Yoses",
-        pts: [
-          [9.9340, -84.0620],
-          [9.9320, -84.0480],
-          [9.9240, -84.0490],
-          [9.9250, -84.0630],
-          [9.9340, -84.0620]
-        ]
-      },
-      {
-        id: "HUELLA-HER-01",
-        name: "Huella FTTH Heredia Centro",
-        pts: [
-          [10.0050, -84.1240],
-          [10.0030, -84.1100],
-          [9.9920, -84.1110],
-          [9.9930, -84.1250],
-          [10.0050, -84.1240]
-        ]
-      },
-      {
-        id: "HUELLA-ESC-01",
-        name: "Huella FTTH Escazú - Guachipelín",
-        pts: [
-          [9.9480, -84.1550],
-          [9.9420, -84.1350],
-          [9.9310, -84.1370],
-          [9.9330, -84.1560],
-          [9.9480, -84.1550]
-        ]
-      }
-    ];
-
-    let footprintPolygons = [...DEFAULT_FOOTPRINTS];
-
-    let condominiums = [
-      { id: "CONDO-01", name: "Condominio Torres del Parque", province: "San José", canton: "San José", lat: 9.9385, lng: -84.1115 },
-      { id: "CONDO-02", name: "Residencial Las Flores", province: "Heredia", canton: "Heredia", lat: 10.0020, lng: -84.1125 },
-      { id: "CONDO-03", name: "Condominio Distrito Cuatro", province: "San José", canton: "Escazú", lat: 9.9410, lng: -84.1430 }
-    ];
-
-    // State Variables
-    let currentLat = 10.018194;
-    let currentLng = -84.216833;
-    let showNodes = false; // Default OFF for maximum performance
+    let currentLat = 9.9380;
+    let currentLng = -84.1120;
+    let showNodes = false; 
     let lastEvaluation = null;
 
-    // Leaflet Variables
-    let map = null;
-    let darkMatterLayer = null;
-    let streetsLayer = null;
-    let currentBaseLayer = null;
-    let markersLayer = null;
-    let cablesLayer = null;
-    let connectionsLayer = null;
+    let map = null, darkMatterLayer = null, markersLayer = null, cablesLayer = null, connectionsLayer = null;
+    let certMap = null, certDarkLayer = null, certLabelsLayer = null, certLayersGroup = null;
 
-    // Dedicated Certificate Map Variables
-    let certMap = null;
-    let certDarkLayer = null;
-    let certLayersGroup = null;
-
-    // IndexedDB Setup for fast persistence of thousands of points
+    // INDEXED DB PARA RENDIMIENTO
     const DB_NAME = 'ValidadorADN_DB';
     const DB_VERSION = 2;
     const STORE_NAME = 'network_cache_v2';
 
     function openIndexedDB() {
       return new Promise((resolve) => {
-        if (!window.indexedDB) {
-          resolve(null);
-          return;
-        }
+        if (!window.indexedDB) { resolve(null); return; }
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         request.onerror = () => resolve(null);
         request.onsuccess = () => resolve(request.result);
         request.onupgradeneeded = (e) => {
           const db = e.target.result;
-          if (!db.objectStoreNames.contains(STORE_NAME)) {
-            db.createObjectStore(STORE_NAME);
-          }
+          if (!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
         };
       });
     }
@@ -727,9 +493,7 @@
         store.put(polys, 'polys');
         store.put(condos, 'condos');
         store.put(fileName, 'fileName');
-      } catch (err) {
-        console.warn('Error saving to IndexedDB:', err);
-      }
+      } catch (err) {}
     }
 
     async function loadFromIndexedDB() {
@@ -753,63 +517,42 @@
                 condos: reqCondos.result || [],
                 fileName: reqFileName.result || 'Caché Local'
               });
-            } else {
-              resolve(null);
-            }
+            } else { resolve(null); }
           };
           tx.onerror = () => resolve(null);
         });
-      } catch {
-        return null;
-      }
+      } catch { return null; }
     }
 
-    // Mathematical Geodesic Distance Formula (Haversine)
     function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
-      const R = 6371e3; // Earth radius in meters
+      const R = 6371e3; 
       const dLat = ((lat2 - lat1) * Math.PI) / 180;
       const dLon = ((lon2 - lon1) * Math.PI) / 180;
-      const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos((lat1 * Math.PI) / 180) *
-          Math.cos((lat2 * Math.PI) / 180) *
-          Math.sin(dLon / 2) *
-          Math.sin(dLon / 2);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return Math.round(R * c);
     }
 
-    // Geodesic Orthogonal Projection of Point P onto Segment AB
-    // Projects P perpendicularly on segment AB (or snaps to nearest endpoint if projection falls outside)
-    // then returns the exact Haversine distance in meters.
     function distPointToSegment(pLat, pLng, aLat, aLng, bLat, bLng) {
       const meanLat = ((pLat + aLat + bLat) / 3) * (Math.PI / 180);
       const kx = 111320.0 * Math.cos(meanLat);
       const ky = 110574.0;
-
-      const ax = (aLng - pLng) * kx;
-      const ay = (aLat - pLat) * ky;
-      const bx = (bLng - pLng) * kx;
-      const by = (bLat - pLat) * ky;
-
-      const dx = bx - ax;
-      const dy = by - ay;
+      const ax = (aLng - pLng) * kx, ay = (aLat - pLat) * ky;
+      const bx = (bLng - pLng) * kx, by = (bLat - pLat) * ky;
+      const dx = bx - ax, dy = by - ay;
       const segLenSq = dx * dx + dy * dy;
 
       let closestLat, closestLng;
       if (segLenSq < 1e-6) {
-        closestLat = aLat;
-        closestLng = aLng;
+        closestLat = aLat; closestLng = aLng;
       } else {
         const t = Math.max(0, Math.min(1, - (ax * dx + ay * dy) / segLenSq));
         closestLat = aLat + t * (bLat - aLat);
         closestLng = aLng + t * (bLng - aLng);
       }
-
       return calculateHaversineDistance(pLat, pLng, closestLat, closestLng);
     }
 
-    // Point in Polygon Test (Ray Casting)
     function pointInPolygon(pLat, pLng, polyPts) {
       if (!polyPts || polyPts.length < 3) return false;
       let inside = false;
@@ -824,7 +567,6 @@
       return inside;
     }
 
-    // Minimum Distance from Point P to the Perimeter of a Polygon
     function getMinDistanceToPolygonPerimeter(pLat, pLng, polyPts) {
       if (!polyPts || polyPts.length < 2) return Infinity;
       let minDist = Infinity;
@@ -836,87 +578,60 @@
       return minDist;
     }
 
-    
-    // Dedicated parser for huella_de_red.kml official polygons
     function parseKmlPolygons(kmlText) {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(kmlText, 'text/xml');
       const polygonElements = xmlDoc.getElementsByTagName('Polygon');
       const parsed = [];
-
       for (let i = 0; i < polygonElements.length; i++) {
         const polyEl = polygonElements[i];
         let parent = polyEl.parentElement;
-        while (parent && parent.tagName !== 'Placemark' && parent !== xmlDoc.documentElement) {
-          parent = parent.parentElement;
-        }
+        while (parent && parent.tagName !== 'Placemark' && parent !== xmlDoc.documentElement) { parent = parent.parentElement; }
         const nameEl = parent ? parent.getElementsByTagName('name')[0] : null;
-        const name = nameEl ? nameEl.textContent.trim() : ('Huella FTTH ' + (i + 1));
-
-        const outerEl = polyEl.getElementsByTagName('outerBoundaryIs')[0] || polyEl;
-        const coordEl = outerEl.getElementsByTagName('coordinates')[0];
+        const name = nameEl ? nameEl.textContent.trim() : ('Huella ' + (i + 1));
+        const coordEl = (polyEl.getElementsByTagName('outerBoundaryIs')[0] || polyEl).getElementsByTagName('coordinates')[0];
         if (coordEl && coordEl.textContent.trim()) {
           const tuples = coordEl.textContent.trim().split(/\s+/);
           const pts = [];
           for (let t = 0; t < tuples.length; t++) {
             const parts = tuples[t].split(',');
             if (parts.length >= 2) {
-              const lng = parseFloat(parts[0]);
-              const lat = parseFloat(parts[1]);
-              if (!isNaN(lat) && !isNaN(lng)) {
-                pts.push([lat, lng]);
-              }
+              const lng = parseFloat(parts[0]), lat = parseFloat(parts[1]);
+              if (!isNaN(lat) && !isNaN(lng)) pts.push([lat, lng]);
             }
           }
-          if (pts.length >= 3) {
-            parsed.push({ id: 'HUELLA-' + (i + 1), name: name, pts: pts });
-          }
+          if (pts.length >= 3) parsed.push({ id: 'HUELLA-' + i, name: name, pts: pts });
         }
       }
       return parsed;
     }
 
-    // Companion parser for huella_de_red.geojson
     function parseGeoJsonPolygons(geojson) {
       const parsed = [];
       const features = geojson.features || (geojson.type === 'Feature' ? [geojson] : []);
       features.forEach((feat, idx) => {
         const geom = feat.geometry;
         if (!geom) return;
-        const name = (feat.properties && feat.properties.name) ? feat.properties.name : ('Huella FTTH ' + (idx + 1));
+        const name = (feat.properties && feat.properties.name) ? feat.properties.name : ('Huella ' + idx);
         if (geom.type === 'Polygon' && geom.coordinates && geom.coordinates[0]) {
           const pts = geom.coordinates[0].map(coord => [coord[1], coord[0]]);
-          if (pts.length >= 3) parsed.push({ id: 'HUELLA-GEO-' + (idx + 1), name: name, pts: pts });
-        } else if (geom.type === 'MultiPolygon' && geom.coordinates) {
-          geom.coordinates.forEach((polyCoords, pIdx) => {
-            if (polyCoords[0]) {
-              const pts = polyCoords[0].map(coord => [coord[1], coord[0]]);
-              if (pts.length >= 3) parsed.push({ id: 'HUELLA-GEO-' + (idx + 1) + '-' + (pIdx + 1), name: (name + ' (Parte ' + (pIdx + 1) + ')'), pts: pts });
-            }
-          });
+          if (pts.length >= 3) parsed.push({ id: 'HUELLA-GEO-' + idx, name: name, pts: pts });
         }
       });
       return parsed;
     }
 
-    // Comprehensive KML/KMZ Parser: Placemarks, Points, LineStrings, Polygons
     function parseKmlDocument(kmlText, sourceName) {
       const parser = new DOMParser();
       const xmlDoc = parser.parseFromString(kmlText, 'text/xml');
       const placemarks = xmlDoc.getElementsByTagName('Placemark');
-      
-      const parsedNodes = [];
-      const parsedCondos = [];
-      const parsedCables = [];
-      const parsedPolygons = [];
+      const parsedNodes = [], parsedCondos = [], parsedCables = [], parsedPolygons = [];
 
       for (let i = 0; i < placemarks.length; i++) {
         const pm = placemarks[i];
-        const nameEl = pm.getElementsByTagName('name')[0];
-        const name = nameEl ? nameEl.textContent.trim() : `Elemento ${i + 1}`;
+        const name = (pm.getElementsByTagName('name')[0]?.textContent.trim()) || `Elemento ${i}`;
         const lowerName = name.toLowerCase();
 
-        // 1. Check for Polygon (Footprints / Huella FTTH)
         const polyEls = pm.getElementsByTagName('Polygon');
         if (polyEls.length > 0) {
           const coordEl = pm.getElementsByTagName('coordinates')[0];
@@ -926,87 +641,50 @@
             for (let t = 0; t < rawPts.length; t++) {
               const parts = rawPts[t].split(',');
               if (parts.length >= 2) {
-                const lng = parseFloat(parts[0]);
-                const lat = parseFloat(parts[1]);
-                if (!isNaN(lat) && !isNaN(lng)) {
-                  polyPts.push([lat, lng]);
-                }
+                const lng = parseFloat(parts[0]), lat = parseFloat(parts[1]);
+                if (!isNaN(lat) && !isNaN(lng)) polyPts.push([lat, lng]);
               }
             }
-            if (polyPts.length >= 3) {
-              parsedPolygons.push({ id: `POLY-${i}`, name, pts: polyPts });
-            }
+            if (polyPts.length >= 3) parsedPolygons.push({ id: `POLY-${i}`, name, pts: polyPts });
           }
           continue;
         }
 
-        // 2. Check for LineString (Fiber Cables / Tendidos)
         const lineEls = pm.getElementsByTagName('LineString');
         if (lineEls.length > 0) {
           const coordEl = pm.getElementsByTagName('coordinates')[0];
           if (coordEl && coordEl.textContent.trim()) {
             const rawPts = coordEl.textContent.trim().split(/\s+/);
             const linePts = [];
+            let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
             for (let t = 0; t < rawPts.length; t++) {
               const parts = rawPts[t].split(',');
               if (parts.length >= 2) {
-                const lng = parseFloat(parts[0]);
-                const lat = parseFloat(parts[1]);
+                const lng = parseFloat(parts[0]), lat = parseFloat(parts[1]);
                 if (!isNaN(lat) && !isNaN(lng)) {
                   linePts.push([lat, lng]);
+                  if(lat < minLat) minLat = lat; if(lat > maxLat) maxLat = lat;
+                  if(lng < minLng) minLng = lng; if(lng > maxLng) maxLng = lng;
                 }
               }
             }
-            if (linePts.length >= 2) {
-              parsedCables.push({ id: `CABLE-${i}`, name, pts: linePts });
-            }
+            if (linePts.length >= 2) parsedCables.push({ id: `CABLE-${i}`, name, pts: linePts, bounds: { minLat, maxLat, minLng, maxLng } });
           }
           continue;
         }
 
-        // 3. Points (Nodes / Closures or Condos)
         const pointEls = pm.getElementsByTagName('Point');
         if (pointEls.length > 0) {
           const coordEl = pm.getElementsByTagName('coordinates')[0];
           if (coordEl && coordEl.textContent.trim()) {
             const parts = coordEl.textContent.trim().split(',');
             if (parts.length >= 2) {
-              const lng = parseFloat(parts[0]);
-              const lat = parseFloat(parts[1]);
-
+              const lng = parseFloat(parts[0]), lat = parseFloat(parts[1]);
               if (!isNaN(lat) && !isNaN(lng)) {
-                if (lat >= 8.0 && lat <= 11.5 && lng >= -86.0 && lng <= -82.0) {
-                  const province = lat > 10.35 ? "Guanacaste" :
-                                   lat > 9.97 && lng < -84.18 ? "Alajuela" :
-                                   lat > 9.96 && lng >= -84.18 ? "Heredia" :
-                                   lng < -83.7 ? "Cartago" :
-                                   lat < 9.7 ? "Puntarenas" : "San José";
-
-                  const isCondo = lowerName.includes('condo') || lowerName.includes('residencial') || lowerName.includes('torre') || lowerName.includes('urbaniza');
-
-                  if (isCondo) {
-                    parsedCondos.push({
-                      id: `KMZ-C-${i}`,
-                      name,
-                      province,
-                      canton: province,
-                      lat,
-                      lng
-                    });
-                  } else {
-                    parsedNodes.push({
-                      id: `KMZ-N-${i}`,
-                      name,
-                      province,
-                      canton: province,
-                      district: "Central",
-                      lat,
-                      lng,
-                      capacityGbps: 100,
-                      status: "Activo",
-                      code: name
-                    });
-                  }
+                if (lowerName.includes('condo') || lowerName.includes('residencial') || lowerName.includes('urbaniza')) {
+                  parsedCondos.push({ id: `KMZ-C-${i}`, name, lat, lng });
+                } else {
+                  parsedNodes.push({ id: `KMZ-N-${i}`, name, lat, lng, capacityGbps: 100, code: name });
                 }
               }
             }
@@ -1014,60 +692,36 @@
         }
       }
 
-      if (parsedNodes.length > 0) fiberNodes = parsedNodes;
-      if (parsedCables.length > 0) fiberCables = parsedCables;
-      if (parsedPolygons.length > 0) {
-        const parsedIds = new Set(parsedPolygons.map(p => p.name));
-        const preservedOfficial = footprintPolygons.filter(p => !parsedIds.has(p.name));
-        footprintPolygons = [...preservedOfficial, ...parsedPolygons];
-      }
-      if (parsedCondos.length > 0) condominiums = parsedCondos;
+      if (parsedNodes.length > 0) fiberNodes = [...fiberNodes, ...parsedNodes];
+      if (parsedCables.length > 0) fiberCables = [...fiberCables, ...parsedCables];
+      if (parsedPolygons.length > 0) footprintPolygons = [...footprintPolygons, ...parsedPolygons];
+      if (parsedCondos.length > 0) condominiums = [...condominiums, ...parsedCondos];
 
       updateNodesCounterUI(sourceName);
       saveToIndexedDB(fiberNodes, fiberCables, footprintPolygons, condominiums, sourceName);
-      renderMapLayers();
+      if(showNodes) renderMapLayers();
     }
 
-        // Official Footprint Loader: Reads huella_de_red.kml directly from root directory
     async function loadHuellaDeRed() {
-      const candidates = [
-        'huella_de_red.kml',
-        './huella_de_red.kml',
-        '/huella_de_red.kml',
-        'huella_de_red.geojson',
-        './huella_de_red.geojson',
-        '/huella_de_red.geojson'
-      ];
-
+      const candidates = ['huella_de_red.kml', 'huella_de_red.geojson', './nodos.kml', './red.kml'];
       for (const url of candidates) {
         try {
           const res = await fetch(url);
           if (res.ok) {
             if (url.endsWith('.geojson')) {
               const geojson = await res.json();
-              const parsed = parseGeoJsonPolygons(geojson);
-              if (parsed.length > 0) {
-                footprintPolygons = [...parsed, ...footprintPolygons.filter(p => !parsed.some(o => o.name === p.name))];
-                console.log(`[Huella FTTH] ${parsed.length} polígonos oficiales cargados desde ${url}`);
-                updateFootprintBadgeUI(url, parsed.length);
-                renderMapLayers();
-                return true;
-              }
+              footprintPolygons = parseGeoJsonPolygons(geojson);
             } else {
               const kmlText = await res.text();
-              const parsed = parseKmlPolygons(kmlText);
-              if (parsed.length > 0) {
-                footprintPolygons = [...parsed, ...footprintPolygons.filter(p => !parsed.some(o => o.name === p.name))];
-                console.log(`[Huella FTTH] ${parsed.length} polígonos oficiales cargados desde ${url}`);
-                updateFootprintBadgeUI(url, parsed.length);
-                renderMapLayers();
-                return true;
-              }
+              footprintPolygons = parseKmlPolygons(kmlText);
+            }
+            if (footprintPolygons.length > 0) {
+              updateFootprintBadgeUI(url, footprintPolygons.length);
+              if(showNodes) renderMapLayers();
+              return true;
             }
           }
-        } catch (e) {
-          // Continue to next candidate
-        }
+        } catch (e) {}
       }
       return false;
     }
@@ -1075,92 +729,31 @@
     function updateFootprintBadgeUI(url, count) {
       const badge = document.getElementById('datasource-badge');
       if (badge) {
-        badge.innerText = `Huella FTTH: ${count} Polígonos (${url}) 🇨🇷`;
+        badge.innerText = `Huella FTTH: ${count} Polígonos`;
         badge.className = "hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 whitespace-nowrap";
       }
     }
 
-    async function loadBackgroundKmz() {
-      // Step 1: Load Official Footprint (huella_de_red.kml)
-      await loadHuellaDeRed();
-
-      // Step 2: Check IndexedDB Cache
-      const cached = await loadFromIndexedDB();
-      if (cached && cached.nodes.length > 0) {
-        fiberNodes = cached.nodes;
-        if (cached.cables && cached.cables.length > 0) fiberCables = cached.cables;
-        if (cached.polys && cached.polys.length > 0) footprintPolygons = cached.polys;
-        if (cached.condos && cached.condos.length > 0) condominiums = cached.condos;
-        updateNodesCounterUI(cached.fileName || 'IndexedDB');
-        evaluateCoordinates(currentLat, currentLng, 'Punto Inicial (Caché)');
-      }
-
-      // Step 2: Background fetch from repository KMZ
-      const candidates = ['./Octubre Comercial 2026.kmz', '/Octubre Comercial 2026.kmz', 'Octubre Comercial 2026.kmz', './nodos.kmz', './red.kml'];
-      for (const url of candidates) {
-        try {
-          const res = await fetch(url);
-          if (res.ok) {
-            const blob = await res.blob();
-            if (url.endsWith('.kml')) {
-              const text = await blob.text();
-              parseKmlDocument(text, url);
-            } else {
-              const zip = new JSZip();
-              const unzipped = await zip.loadAsync(blob);
-              const kmlFilename = Object.keys(unzipped.files).find(f => f.endsWith('.kml'));
-              if (kmlFilename) {
-                const text = await unzipped.files[kmlFilename].async('text');
-                parseKmlDocument(text, 'Octubre Comercial 2026.kmz');
-              }
-            }
-            evaluateCoordinates(currentLat, currentLng, 'Punto Inicial');
-            break;
-          }
-        } catch (e) {
-          // Continue to next candidate
-        }
-      }
-
-      // Ensure official huella_de_red.kml footprints are always merged and active
-      await loadHuellaDeRed();
-
-      updateNodesCounterUI();
-      evaluateCoordinates(currentLat, currentLng, 'Punto Inicial');
-    }
-
     function updateNodesCounterUI(sourceName) {
       document.getElementById('nodes-count-number').innerText = fiberNodes.length;
-      document.getElementById('datasource-badge').innerText = sourceName ? `Red: ${sourceName} 🇨🇷` : `GAM: ${fiberNodes.length} Nodos 🇨🇷`;
-      document.getElementById('datasource-badge').className = "hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 whitespace-nowrap";
+      if (sourceName) document.getElementById('datasource-badge').innerText = `Red: ${sourceName} 🇨🇷`;
     }
 
     function updateNodesToggleUI() {
       const panelBtn = document.getElementById('btn-panel-toggle-nodes');
       const panelDesc = document.getElementById('toggle-status-desc');
       const iconBox = document.getElementById('toggle-icon-box');
-      const legendState = document.getElementById('legend-nodes-state');
-
-      if (!panelBtn) return;
 
       if (showNodes) {
         panelBtn.innerText = "ON (Visible)";
         panelBtn.className = "px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white ring-2 ring-emerald-400/50";
-        if (panelDesc) {
-          panelDesc.innerText = "🟢 ACTIVA (Todos los nodos visibles en el mapa)";
-          panelDesc.className = "text-[11px] text-emerald-300 block mt-0.5 font-medium";
-        }
+        if (panelDesc) panelDesc.innerText = "🟢 ACTIVA (Toda la red y tendido visible en el mapa)";
         if (iconBox) iconBox.className = "p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400";
-        if (legendState) legendState.innerText = `Capa general de nodos: Activa (${fiberNodes.length} nodos)`;
       } else {
         panelBtn.innerText = "OFF (Oculto)";
         panelBtn.className = "px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md shrink-0 bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600";
-        if (panelDesc) {
-          panelDesc.innerText = "🔴 APAGADA (Recomendado: Búsqueda fluida sin lag)";
-          panelDesc.className = "text-[11px] text-amber-300 block mt-0.5 font-medium";
-        }
+        if (panelDesc) panelDesc.innerText = "🔴 APAGADA (Muestra solo nodo cercano)";
         if (iconBox) iconBox.className = "p-2.5 rounded-xl bg-amber-500/20 text-amber-400";
-        if (legendState) legendState.innerText = "Capa general de nodos: Desactivada (Alto rendimiento)";
       }
     }
 
@@ -1170,24 +763,22 @@
       renderMapLayers();
     }
 
-    // Initialize Leaflet Map (CARTO DARK MATTER DEFAULT)
     function initMap() {
-      map = L.map('map', { zoomControl: false }).setView([currentLat, currentLng], 15);
+      map = L.map('map', { zoomControl: false }).setView([9.9281, -84.0907], 15);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // CartoDB Dark Matter tile layer (Dark Mode)
-      darkMatterLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
-        maxZoom: 20
+      // Usamos el servicio libre de alta definición de ESRI World Imagery que no bloquea la descarga CORS
+      darkMatterLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxNativeZoom: 19, maxZoom: 21, attribution: '&copy; Esri', crossOrigin: 'anonymous'
       });
-
-      streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors',
-        maxZoom: 19
+      // Capa de nombres de calles y lugares por encima
+      const labelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        maxNativeZoom: 19, maxZoom: 21, crossOrigin: 'anonymous'
       });
 
       darkMatterLayer.addTo(map);
+      labelsLayer.addTo(map);
+      
       currentBaseLayer = darkMatterLayer;
 
       cablesLayer = L.layerGroup().addTo(map);
@@ -1195,8 +786,9 @@
       connectionsLayer = L.layerGroup().addTo(map);
 
       map.on('click', function(e) {
-        const lat = Number(e.latlng.lat.toFixed(5));
-        const lng = Number(e.latlng.lng.toFixed(5));
+        const lat = Number(e.latlng.lat.toFixed(6));
+        const lng = Number(e.latlng.lng.toFixed(6));
+        document.getElementById('smart-search-input').value = `${lat}, ${lng}`;
         evaluateCoordinates(lat, lng, 'Clic en Mapa');
       });
 
@@ -1205,518 +797,383 @@
       });
 
       updateNodesToggleUI();
-      loadBackgroundKmz();
+      
+      (async function() {
+        await loadHuellaDeRed();
+        const cached = await loadFromIndexedDB();
+        if (cached && cached.nodes.length > 0) {
+          fiberNodes = cached.nodes;
+          if (cached.cables.length > 0) fiberCables = cached.cables;
+          if (cached.polys.length > 0) footprintPolygons = cached.polys;
+          if (cached.condos.length > 0) condominiums = cached.condos;
+          updateNodesCounterUI(cached.fileName);
+        }
+
+        const candidatesKMZ = ['./Octubre Comercial 2026.kmz', './nodos.kmz', './red.kml'];
+        for (const url of candidatesKMZ) {
+          try {
+            const res = await fetch(url);
+            if (res.ok) {
+              const blob = await res.blob();
+              if (url.endsWith('.kml')) {
+                parseKmlDocument(await blob.text(), url);
+              } else {
+                const zip = new JSZip();
+                const unzipped = await zip.loadAsync(blob);
+                const kmlFilename = Object.keys(unzipped.files).find(f => f.endsWith('.kml'));
+                if (kmlFilename) parseKmlDocument(await unzipped.files[kmlFilename].async('text'), url);
+              }
+              break;
+            }
+          } catch (e) {}
+        }
+        updateNodesCounterUI();
+      })();
     }
 
-    function setMapLayer(type) {
-      if (type === 'dark' && currentBaseLayer !== darkMatterLayer) {
-        map.removeLayer(currentBaseLayer);
-        darkMatterLayer.addTo(map);
-        currentBaseLayer = darkMatterLayer;
-        document.getElementById('btn-dark').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition";
-        document.getElementById('btn-str').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition";
-      } else if (type === 'streets' && currentBaseLayer !== streetsLayer) {
-        map.removeLayer(currentBaseLayer);
-        streetsLayer.addTo(map);
-        currentBaseLayer = streetsLayer;
-        document.getElementById('btn-str').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium bg-blue-600 text-white shadow-md transition";
-        document.getElementById('btn-dark').className = "px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-300 hover:bg-slate-800 transition";
-      }
+    // GEOCODING INVERSO DE OSM
+    async function fetchTerritorialAddress(lat, lng) {
+      let result = { provincia: "San José", canton: "San José", distrito: "Central", barrio: "Barrio", exactStreet: "Calle Principal", localPOI: null };
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&zoom=18&addressdetails=1`);
+        const data = await res.json();
+        if (data && data.address) {
+          const a = data.address;
+          result.provincia = a.state || a.region || "San José";
+          result.canton = a.county || a.municipality || a.city || a.town || "San José";
+          result.distrito = a.suburb || a.city_district || a.village || "Central";
+          result.barrio = a.neighbourhood || a.residential || result.distrito;
+          result.exactStreet = a.road || "Calle Principal";
+        }
+      } catch (e) { console.warn("Error Geocoding:", e); }
+      return result;
     }
 
-    // Geographic Resolution for Costa Rica Territorial Hierarchy
-    function resolveGeographicDetails(lat, lng, nearestNode) {
-      let provincia = nearestNode.province || "San José";
-      let canton = nearestNode.canton || "San José";
-      let distrito = nearestNode.district || "Central";
+    // OVERPASS API: DIRECCIÓN TICA CON PUNTOS CARDINALES Y DISTANCIAS
+    async function fetchColloquialAddress(lat, lng, geoInfo) {
+      try {
+        const query = `[out:json][timeout:5];
+        (
+          nwr(around:400,${lat},${lng})["name"]["amenity"];
+          nwr(around:400,${lat},${lng})["name"]["shop"];
+          nwr(around:400,${lat},${lng})["name"]["building"];
+          nwr(around:400,${lat},${lng})["name"]["tourism"];
+          nwr(around:400,${lat},${lng})["name"]["historic"];
+          nwr(around:400,${lat},${lng})["name"]["leisure"];
+          nwr(around:400,${lat},${lng})["name"]["office"];
+          nwr(around:400,${lat},${lng})["name"]["healthcare"];
+        );
+        out center 5;`;
 
-      if (lat > 10.35) {
-        provincia = "Guanacaste"; canton = "Liberia"; distrito = "Cañas Dulces";
-      } else if (lat > 9.97 && lng < -84.18) {
-        provincia = "Alajuela"; canton = "Alajuela"; distrito = "Alajuela";
-      } else if (lat > 9.96 && lng >= -84.18) {
-        provincia = "Heredia"; canton = "Heredia"; distrito = "Mercedes";
-      } else if (lng < -83.7) {
-        provincia = "Cartago"; canton = "Cartago"; distrito = "Oriental";
-      } else if (lat < 9.7) {
-        provincia = "Puntarenas"; canton = "Puntarenas"; distrito = "El Roble";
-      } else {
-        provincia = "San José"; canton = "San José"; distrito = "Pavas";
-      }
+        const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+        if (res.ok) {
+          const data = await res.json();
+          const namedElements = data.elements.filter(e => e.tags && e.tags.name);
+          if (namedElements.length > 0) {
+            let closest = null;
+            let minDist = Infinity;
+            namedElements.forEach(el => {
+              const poiLat = el.lat || (el.center && el.center.lat);
+              const poiLng = el.lon || (el.center && el.center.lon);
+              if (poiLat && poiLng) {
+                const d = calculateHaversineDistance(lat, lng, poiLat, poiLng);
+                if (d < minDist && d > 2) { 
+                  minDist = d; closest = { name: el.tags.name, lat: poiLat, lng: poiLng }; 
+                }
+              }
+            });
 
-      const neighborhoods = [
-        "Sabana Norte", "Rohrmoser", "Los Yoses", "Barrio Escalante", 
-        "Guachipelín", "San Rafael", "San Francisco de Heredia", "El Carmen", 
-        "Cipreses", "Pozos de Santa Ana", "Alajuela Centro", "La Tropicana"
-      ];
-      const barrio = (provincia === "Alajuela") 
-        ? "Alajuela Centro" 
-        : neighborhoods[Math.abs(Math.round(lat * 10000 + lng * 10000)) % neighborhoods.length];
-      const exactStreet = `Calle ${Math.abs(Math.round(lat * 100)) % 50 + 1}, Avenida Principal`;
+            if (closest) {
+              const dLon = (lng - closest.lng) * Math.PI / 180;
+              const lat1 = closest.lat * Math.PI / 180;
+              const lat2 = lat * Math.PI / 180;
+              const y = Math.sin(dLon) * Math.cos(lat2);
+              const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+              let brng = (Math.atan2(y, x) * 180 / Math.PI + 360) % 360; 
+              
+              brng = (brng + 180) % 360; 
 
-      return { provincia, canton, distrito, barrio, exactStreet };
-    }
+              let cardinal = "Norte";
+              if (brng >= 337.5 || brng < 22.5) cardinal = "Norte";
+              else if (brng >= 22.5 && brng < 67.5) cardinal = "Noreste";
+              else if (brng >= 67.5 && brng < 112.5) cardinal = "Este";
+              else if (brng >= 112.5 && brng < 157.5) cardinal = "Sureste";
+              else if (brng >= 157.5 && brng < 202.5) cardinal = "Sur";
+              else if (brng >= 202.5 && brng < 247.5) cardinal = "Suroeste";
+              else if (brng >= 247.5 && brng < 292.5) cardinal = "Oeste";
+              else if (brng >= 292.5 && brng < 337.5) cardinal = "Noroeste";
 
-    // UNIFIED ADVANCED GEODESIC EVALUATION ENGINE (AMERICAN DATA NETWORKS)
-    // Reglas de Factibilidad:
-    // <= 30m: "Con cobertura" (Verde)
-    // 30m a 400m: "Al borde" (Naranja) -> "Está a [X] metros de la red. Hace falta el estudio para confirmarlo."
-    // > 400m: "Sin cobertura" (Rojo)
-    function evaluateCoordinates(lat, lng, sourceName = '') {
-      currentLat = lat;
-      currentLng = lng;
-
-      document.getElementById('coords-badge').innerText = `Lat: ${lat} • Lng: ${lng}`;
-
-      // 1. Calculate distance to all nodes and sort
-      const nodeDistances = fiberNodes.map(node => ({
-        node,
-        distance: calculateHaversineDistance(lat, lng, node.lat, node.lng)
-      })).sort((a, b) => a.distance - b.distance);
-
-      const nearestNode = nodeDistances[0]?.node || fiberNodes[0];
-      const minNodeDist = nodeDistances[0]?.distance || 0;
-      const subsequentNodes = nodeDistances.slice(1, 5);
-
-      // 2. Calculate minimum perpendicular geodesic distance to all fiber cable segments (Tendido de Red)
-      let minCableDist = Infinity;
-      let nearestCable = null;
-      for (const cable of fiberCables) {
-        if (!cable.pts || cable.pts.length < 2) continue;
-        for (let i = 0; i < cable.pts.length - 1; i++) {
-          const d = distPointToSegment(lat, lng, cable.pts[i][0], cable.pts[i][1], cable.pts[i + 1][0], cable.pts[i + 1][1]);
-          if (d < minCableDist) {
-            minCableDist = d;
-            nearestCable = cable;
+              if (minDist <= 15) {
+                return `Sobre ${geoInfo.exactStreet}, frente o contiguo a ${closest.name}.`;
+              }
+              const roundedDist = Math.round(minDist / 5) * 5;
+              
+              let referenceStr = `De ${closest.name}, aprox. ${roundedDist} metros al ${cardinal}`;
+              if (geoInfo.exactStreet && geoInfo.exactStreet.toLowerCase() !== "calle principal") {
+                referenceStr += `, sobre ${geoInfo.exactStreet}.`;
+              } else {
+                referenceStr += `.`;
+              }
+              return referenceStr;
+            }
           }
         }
-      }
-      if (minCableDist === Infinity) {
-        minCableDist = minNodeDist;
-      }
+      } catch (e) {}
+      
+      return geoInfo.exactStreet && geoInfo.exactStreet.toLowerCase() !== "calle principal" 
+        ? `Sobre ${geoInfo.exactStreet}, ${geoInfo.barrio}.` 
+        : `Sector de ${geoInfo.barrio}, ${geoInfo.distrito}.`;
+    }
 
-      // 3. Calculate distance to FTTH Footprint Polygon (Huella FTTH)
+    async function evaluateCoordinates(lat, lng, sourceName = '') {
+      if (fiberNodes.length === 0) {
+        alert("Aún no hay nodos cargados. Por favor espere o suba el archivo de red.");
+        return;
+      }
+      currentLat = lat; currentLng = lng;
+      document.getElementById('coords-badge').innerText = `Lat: ${lat} • Lng: ${lng}`;
+      
+      // ESTADO DE CARGA
+      document.getElementById('res-prov-canton').innerText = "Cargando ubicación...";
+      document.getElementById('res-dist-barrio').innerText = "...";
+      document.getElementById('res-exact-street').innerText = "...";
+      document.getElementById('res-colloquial').innerText = "Buscando referencias exactas...";
+
+      const clientPt = turf.point([lng, lat]);
+      const latThreshold = 0.015; 
+      const lngThreshold = 0.015;
+
+      let nearbyNodes = fiberNodes.filter(n => Math.abs(n.lat - lat) < latThreshold && Math.abs(n.lng - lng) < lngThreshold);
+      if(nearbyNodes.length === 0) nearbyNodes = fiberNodes;
+
+      const nodeDistances = nearbyNodes.map(node => ({
+        node, distance: Math.round(turf.distance(clientPt, turf.point([node.lng, node.lat])) * 1000)
+      })).sort((a, b) => a.distance - b.distance);
+
+      const nearestNode = nodeDistances[0].node;
+      const minNodeDist = nodeDistances[0].distance;
+      const subsequentNodes = nodeDistances.slice(1, 5);
+
+      let nearbyCables = fiberCables.filter(c => {
+        if(!c.bounds) return true;
+        return (lat >= c.bounds.minLat - latThreshold && lat <= c.bounds.maxLat + latThreshold && lng >= c.bounds.minLng - lngThreshold && lng <= c.bounds.maxLng + lngThreshold);
+      });
+      if(nearbyCables.length === 0) nearbyCables = fiberCables;
+
+      let minCableDist = Infinity;
+      let nearestCable = null;
+      for (const cable of nearbyCables) {
+        if (!cable.pts || cable.pts.length < 2) continue;
+        const line = turf.lineString(cable.pts.map(p => [p[1], p[0]]));
+        const nearest = turf.nearestPointOnLine(line, clientPt);
+        const d = nearest.properties.dist * 1000;
+        if (d < minCableDist) { minCableDist = d; nearestCable = cable; }
+      }
+      minCableDist = Math.round(minCableDist);
+      if (minCableDist === Infinity) minCableDist = minNodeDist;
+
       let isInsidePolygon = false;
       let minPolyEdgeDist = Infinity;
-      let closestPoly = null;
-
+      
       for (const poly of footprintPolygons) {
         if (!poly.pts || poly.pts.length < 3) continue;
-        const inside = pointInPolygon(lat, lng, poly.pts);
-        if (inside) isInsidePolygon = true;
+        const coords = poly.pts.map(p => [p[1], p[0]]); 
+        if (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1]) coords.push(coords[0]);
+        const polygonFeature = turf.polygon([coords]);
 
-        const edgeDist = getMinDistanceToPolygonPerimeter(lat, lng, poly.pts);
-        if (edgeDist < minPolyEdgeDist) {
-          minPolyEdgeDist = edgeDist;
-          closestPoly = poly;
+        if (turf.booleanPointInPolygon(clientPt, polygonFeature)) isInsidePolygon = true;
+
+        const polyLine = turf.polygonToLine(polygonFeature);
+        const lines = polyLine.type === 'FeatureCollection' ? polyLine.features : [polyLine];
+        for (const line of lines) {
+          const nearest = turf.nearestPointOnLine(line, clientPt);
+          const d = nearest.properties.dist * 1000;
+          if (d < minPolyEdgeDist) minPolyEdgeDist = d;
         }
       }
+      minPolyEdgeDist = Math.round(minPolyEdgeDist);
 
-      // Determine Huella FTTH state and exact border distance
-      let huellaStatus = 'afuera';
-      let huellaDist = 0;
+      let distanceToNet = isInsidePolygon ? 0 : Math.round(Math.min(minPolyEdgeDist !== Infinity ? minPolyEdgeDist : Infinity, minCableDist, minNodeDist));
+      let huellaStatus = isInsidePolygon ? 'adentro' : 'afuera';
+      let huellaDist = distanceToNet;
 
-      if (isInsidePolygon) {
-        huellaStatus = 'adentro';
-        huellaDist = 0;
-      } else if (footprintPolygons.length > 0 && minPolyEdgeDist < 300) {
-        huellaStatus = 'afuera';
-        huellaDist = minPolyEdgeDist;
-      } else {
-        // Standard aerial FTTH network coverage buffer (27m drop threshold along fiber cable)
-        // If cable is at 121m -> outer border of FTTH footprint is at 121 - 27 = 94m!
-        if (minCableDist <= 27) {
-          huellaStatus = 'adentro';
-          huellaDist = 0;
-        } else {
-          huellaStatus = 'afuera';
-          huellaDist = Math.max(0, minCableDist - 27);
-        }
-      }
-
-      // 4. Calculate distance to condominiums
       let nearestCondo = null;
       let minCondoDist = Infinity;
       for (const condo of condominiums) {
-        const d = calculateHaversineDistance(lat, lng, condo.lat, condo.lng);
-        if (d < minCondoDist) {
-          minCondoDist = d;
-          nearestCondo = condo;
-        }
+        const d = Math.round(turf.distance(clientPt, turf.point([condo.lng, condo.lat])) * 1000);
+        if (d < minCondoDist) { minCondoDist = d; nearestCondo = condo; }
       }
 
-      const nodeNameLower = nearestNode.name.toLowerCase();
-      const isNodeInPrivateCondo = nodeNameLower.includes('condo') || nodeNameLower.includes('residencial') || nodeNameLower.includes('privad') || (nearestCondo && minCondoDist <= 75);
-      
+      const isNodeInPrivateCondo = nearestNode.name.toLowerCase().includes('condo') || nearestNode.name.toLowerCase().includes('residencial') || (nearestCondo && minCondoDist <= 75);
       let condoAlert = null;
-      if (isNodeInPrivateCondo) {
+      if (isNodeInPrivateCondo && huellaDist > 0) {
         const cName = nearestCondo && minCondoDist <= 120 ? nearestCondo.name : nearestNode.name;
-        condoAlert = `⚠️ Advertencia Operativa: El cierre más próximo se encuentra en el condominio o residencial privado "${cName}". Debe confirmarse si la red interna cuenta con servidumbre o acceso a calle pública.`;
+        condoAlert = `⚠️ Advertencia: El cierre más próximo se encuentra en el condominio "${cName}". Confirmar si la red interna cuenta con salida a calle pública.`;
       }
-
-      // 5. MOTOR LÓGICO OFICIAL DE FACTIBILIDAD Y DISTANCIA AL BORDE (AMERICAN DATA NETWORKS)
-      // Si está adentro: distancia = 0m. Si está afuera: distancia perpendicular exacta al borde del polígono más cercano
-      const distanceToNet = isInsidePolygon 
-        ? 0 
-        : (minPolyEdgeDist !== Infinity ? Math.round(minPolyEdgeDist) : Math.min(minCableDist, minNodeDist));
-
-      huellaDist = isInsidePolygon ? 0 : distanceToNet;
 
       let feasibility = 'NO_FACTIBLE';
       let title = 'Sin cobertura';
-      let subtitle = `Está a ${distanceToNet} metros de la red. Excede el rango de cobertura estándar (máx. 400m).`;
+      let subtitle = `Está a ${distanceToNet} metros de la red. Excede el rango de cobertura (máx. 400m).`;
       let badgeClass = 'bg-rose-500/10 border-rose-500/30 text-rose-400';
       let titleColor = 'text-rose-400';
       let iconSvg = '<svg class="w-6 h-6 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>';
       let installTime = 'Requiere proyecto de expansión de red';
 
-      if (isInsidePolygon || distanceToNet <= 0) {
-        // DENTRO DE LA HUELLA -> CON COBERTURA (Verde)
-        feasibility = 'FACTIBLE';
-        title = 'Con cobertura';
-        subtitle = `Está dentro de la huella de red oficial. Conexión directa disponible.`;
-        badgeClass = 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
-        titleColor = 'text-emerald-400';
+      if (distanceToNet <= 0) {
+        feasibility = 'FACTIBLE'; title = 'Con cobertura'; subtitle = `Está dentro de la huella de red oficial. Conexión directa disponible.`;
+        badgeClass = 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'; titleColor = 'text-emerald-400';
         iconSvg = '<svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
         installTime = '24 a 48 horas hábiles';
       } else if (distanceToNet <= 400) {
-        // FUERA, DE 1m A 400m -> AL BORDE (Naranja/Ámbar)
-        feasibility = 'ESTUDIO';
-        title = 'Al borde';
-        subtitle = `Está a ${distanceToNet} metros de la red. Hace falta el estudio para confirmarlo.`;
-        badgeClass = 'bg-amber-500/10 border-amber-500/30 text-amber-400';
-        titleColor = 'text-amber-400';
+        feasibility = 'ESTUDIO'; title = 'Al borde'; subtitle = `Está a ${distanceToNet} metros de la red. Hace falta el estudio para confirmarlo.`;
+        badgeClass = 'bg-amber-500/10 border-amber-500/30 text-amber-400'; titleColor = 'text-amber-400';
         iconSvg = '<svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>';
-        installTime = '3 a 5 días hábiles (Inspección en campo)';
+        installTime = '3 a 5 días hábiles (Inspección)';
       }
 
-      // Texto secundario de condominio más cercano
-      const condoSecText = nearestCondo 
-        ? `Condominio más cercano: ${nearestCondo.name} (a ${minCondoDist} m)` 
-        : `Condominio más cercano: Ninguno registrado en la zona inmediata`;
-
-      // Estimate overhead cable routing (~210 – 280 m for 175m)
       const routingMin = Math.round(minNodeDist * 1.2);
       const routingMax = Math.round(minNodeDist * 1.6);
 
-      const geo = resolveGeographicDetails(lat, lng, nearestNode);
-      const colloquial = `Aprox. ${minNodeDist}m del cierre ${nearestNode.name} (${geo.barrio}, ${geo.canton})`;
+      const geo = await fetchTerritorialAddress(lat, lng);
+      const colloquial = await fetchColloquialAddress(lat, lng, geo);
 
       lastEvaluation = {
-        lat, lng, nearestNode, minNodeDist, subsequentNodes,
-        minCableDist, nearestCable, distanceToNet,
-        huellaStatus, huellaDist,
-        nearestCondo, minCondoDist, condoSecText, condoAlert,
-        feasibility, title, subtitle, badgeClass, titleColor, iconSvg, installTime,
-        routingMin, routingMax, geo, colloquial
+        lat, lng, nearestNode, minNodeDist, subsequentNodes, minCableDist, nearestCable, distanceToNet, huellaStatus, huellaDist,
+        nearestCondo, minCondoDist, condoAlert, feasibility, title, subtitle, badgeClass, titleColor, iconSvg, installTime, routingMin, routingMax, geo, colloquial
       };
 
-      // Save to recent search history
       saveToHistory(lat, lng, sourceName || nearestNode.name, feasibility);
 
-      // Update Panel UI Elements (Original American Data Networks Style)
-      const statusCard = document.getElementById('status-card');
-      statusCard.className = `p-5 rounded-2xl border ${badgeClass} flex items-start space-x-3.5 transition-all duration-300 shadow-inner`;
+      document.getElementById('status-card').className = `p-5 rounded-2xl border ${badgeClass} flex items-start space-x-3.5 transition-all duration-300 shadow-inner`;
       document.getElementById('status-icon').innerHTML = iconSvg;
-      
-      const titleEl = document.getElementById('status-title');
-      titleEl.className = `text-lg font-black tracking-tight ${titleColor}`;
-      titleEl.innerText = title;
+      document.getElementById('status-title').className = `text-lg font-black tracking-tight ${titleColor}`;
+      document.getElementById('status-title').innerText = title;
+      document.getElementById('status-desc').innerText = subtitle;
+      document.getElementById('status-condo-sec').innerText = nearestCondo ? `Condominio más cercano: ${nearestCondo.name} (a ${minCondoDist} m)` : `Condominio más cercano: Ninguno registrado`;
 
-      const descEl = document.getElementById('status-desc');
-      descEl.innerText = subtitle;
-
-      const condoSecEl = document.getElementById('status-condo-sec');
-      condoSecEl.innerText = condoSecText;
-
-      // Update Condo Alert Box
       const alertBox = document.getElementById('condo-alert-box');
-      if (condoAlert) {
-        document.getElementById('condo-alert-text').innerText = condoAlert;
-        alertBox.classList.remove('hidden');
-      } else {
-        alertBox.classList.add('hidden');
-      }
+      if (condoAlert) { document.getElementById('condo-alert-text').innerText = condoAlert; alertBox.classList.remove('hidden'); } 
+      else { alertBox.classList.add('hidden'); }
 
-      // Detailed metrics
       const huellaBadge = feasibility === 'FACTIBLE' ? '🟢' : feasibility === 'ESTUDIO' ? '🟠' : '🔴';
-      const huellaStr = huellaStatus === 'adentro' 
-        ? `adentro (0 m del borde) 🟢` 
-        : `afuera, a ${huellaDist} m del borde ${huellaBadge}`;
-      
-      document.getElementById('res-huella-status').innerText = huellaStr;
+      document.getElementById('res-huella-status').innerText = huellaStatus === 'adentro' ? `adentro (0 m) 🟢` : `afuera, a ${huellaDist} m del borde ${huellaBadge}`;
       document.getElementById('res-node-dist').innerText = `${nearestNode.name} → ${minNodeDist} m`;
       document.getElementById('res-node-name').innerText = nearestNode.code ? `Código: ${nearestNode.code}` : nearestNode.name;
       document.getElementById('res-cable-dist').innerText = `tendido a ${minCableDist} m`;
       document.getElementById('res-routing-estimate').innerText = `~${routingMin} – ${routingMax} m`;
-
+      
       document.getElementById('res-prov-canton').innerText = `${geo.provincia}, ${geo.canton}`;
       document.getElementById('res-dist-barrio').innerText = `${geo.distrito}, ${geo.barrio}`;
       document.getElementById('res-exact-street').innerText = geo.exactStreet;
+      document.getElementById('res-colloquial').innerText = `"${colloquial}"`;
 
       const condoRow = document.getElementById('res-condo-row');
       if (nearestCondo && minCondoDist < 2000) {
         condoRow.classList.remove('hidden');
         document.getElementById('res-condo-details').innerText = `${nearestCondo.name} (${minCondoDist}m)`;
-      } else {
-        condoRow.classList.add('hidden');
-      }
+      } else { condoRow.classList.add('hidden'); }
 
-      document.getElementById('res-colloquial').innerText = `"${colloquial}"`;
-
-      // Update Subsequent Nodes List
-      const subListEl = document.getElementById('subsequent-nodes-list');
       let subHtml = '';
       subsequentNodes.slice(0, 3).forEach(sub => {
-        subHtml += `
-          <div class="flex items-center justify-between text-[11px] bg-slate-900/60 px-2.5 py-1.5 rounded-xl border border-slate-800">
-            <span class="text-slate-300 truncate max-w-[210px]">${sub.node.name}</span>
-            <span class="font-mono font-bold text-blue-400">${sub.distance}m</span>
-          </div>
-        `;
+        subHtml += `<div class="flex items-center justify-between text-[11px] bg-slate-900/60 px-2.5 py-1.5 rounded-xl border border-slate-800"><span class="text-slate-300 truncate max-w-[210px]">${sub.node.name}</span><span class="font-mono font-bold text-blue-400">${sub.distance}m</span></div>`;
       });
-      subListEl.innerHTML = subHtml;
+      document.getElementById('subsequent-nodes-list').innerHTML = subHtml;
 
-      // Render Leaflet Layers
       renderMapLayers();
-
-      // Recenter Map Smoothly
-      map.setView([lat, lng], 15, { animate: true });
+      map.setView([lat, lng], 17, { animate: true });
     }
 
-    // Render Map Layers: Cables in Bright Blue with Defined Border, Evaluated Point, Connection Line, and Nodes if showNodes === true
-    function renderMapLayers() {
-      if (!map || !markersLayer || !connectionsLayer || !cablesLayer || !lastEvaluation) return;
-
-      markersLayer.clearLayers();
-      connectionsLayer.clearLayers();
-      cablesLayer.clearLayers();
-
-      const { lat, lng, nearestNode, minNodeDist, minCableDist, distanceToNet, feasibility } = lastEvaluation;
-
-      // 1. RENDER KML FIBER CABLES IN BRIGHT BLUE WITH DEFINED BORDER (CARTO DARK MATTER)
-      fiberCables.forEach(cable => {
-        if (!cable.pts || cable.pts.length < 2) return;
-        // Defined border (dark background line)
-        L.polyline(cable.pts, {
-          color: '#081a2e',
-          weight: 4.5,
-          opacity: 0.9,
-          interactive: false
-        }).addTo(cablesLayer);
-        // Bright electric blue foreground line
-        L.polyline(cable.pts, {
-          color: '#00d4ff',
-          weight: 2.2,
-          opacity: 0.95,
-          interactive: false
-        }).addTo(cablesLayer);
-      });
-
-      // Render Polygons in bright blue with defined border
-      footprintPolygons.forEach(poly => {
-        if (!poly.pts || poly.pts.length < 3) return;
-        L.polygon(poly.pts, {
-          color: '#00d4ff',
-          weight: 2,
-          fillColor: '#0284c7',
-          fillOpacity: 0.15,
-          interactive: false
-        }).addTo(cablesLayer);
-      });
-
-      // 2. If showNodes is ON, render network nodes and condominiums within current map viewport
-      if (showNodes) {
-        const bounds = map.getBounds().pad(0.25);
-        const visibleNodes = fiberNodes.filter(node => bounds.contains([node.lat, node.lng])).slice(0, 350);
-        const visibleCondos = condominiums.filter(condo => bounds.contains([condo.lat, condo.lng])).slice(0, 150);
-
-        visibleNodes.forEach(node => {
-          const isNearest = node.id === nearestNode.id;
-          const icon = L.divIcon({
-            className: 'custom-node-icon',
-            html: `<div style="background-color: ${isNearest ? '#2563eb' : '#10b981'}; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.7); border: 2px solid white; font-size: 13px; font-weight: bold;">⚡</div>`,
-            iconSize: [28, 28],
-            iconAnchor: [14, 14]
-          });
-          const marker = L.marker([node.lat, node.lng], { icon });
-          marker.bindPopup(`
-            <div style="font-size: 12px; font-family: sans-serif;">
-              <b style="color: #3b82f6;">${node.name}</b><br/>
-              <b>Canton:</b> ${node.canton || ''}, ${node.province || ''}<br/>
-              <b>Capacidad:</b> ${node.capacityGbps || 100} Gbps
-            </div>
-          `);
-          markersLayer.addLayer(marker);
-        });
-
-        visibleCondos.forEach(condo => {
-          const icon = L.divIcon({
-            className: 'custom-condo-icon',
-            html: `<div style="background-color: #8b5cf6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 8px rgba(0,0,0,0.5); border: 2px solid white; font-size: 11px;">🏢</div>`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
-          });
-          const marker = L.marker([condo.lat, condo.lng], { icon });
-          marker.bindPopup(`
-            <div style="font-size: 12px; font-family: sans-serif;">
-              <b style="color: #a855f7;">${condo.name}</b><br/>
-              <b>Ubicación:</b> ${condo.canton || ''}, ${condo.province || ''}
-            </div>
-          `);
-          markersLayer.addLayer(marker);
-        });
-      } else {
-        // When showNodes is OFF, at least render the single target node marker so connection is crystal clear
-        const nearestIcon = L.divIcon({
-          className: 'custom-nearest-node-icon',
-          html: `<div style="background-color: #2563eb; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.8); border: 2px solid white; font-size: 15px; font-weight: bold;">⚡</div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 16]
-        });
-        const nearestMarker = L.marker([nearestNode.lat, nearestNode.lng], { icon: nearestIcon });
-        nearestMarker.bindPopup(`<b>${nearestNode.name}</b><br>Nodo asignado a ${minNodeDist}m`);
-        markersLayer.addLayer(nearestMarker);
-      }
-
-      // 3. Evaluated Location Pin (Always Rendered with Pulsing Halo)
-      const colorHex = feasibility === 'FACTIBLE' ? '#10b981' : feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
-      const evalIcon = L.divIcon({
-        className: 'custom-eval-icon',
-        html: `
-          <div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
-            <div class="pulsing-pin" style="position: absolute; width: 42px; height: 42px; border-radius: 50%; background-color: ${colorHex}; opacity: 0.5;"></div>
-            <div style="background-color: ${colorHex}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.7); border: 2px solid white; font-size: 15px; z-index: 10;">📍</div>
-          </div>
-        `,
-        iconSize: [40, 40],
-        iconAnchor: [20, 20]
-      });
-      const evalMarker = L.marker([lat, lng], { icon: evalIcon });
-      evalMarker.bindPopup(`<b>Punto Evaluado</b><br>Lat: ${lat}, Lng: ${lng}<br><b>Estado:</b> ${lastEvaluation.title}`);
-      markersLayer.addLayer(evalMarker);
-
-      // 4. Dashed Fiber Connection Line to Nearest Node / Network
-      const polyline = L.polyline([[lat, lng], [nearestNode.lat, nearestNode.lng]], {
-        color: colorHex,
-        weight: 3.5,
-        dashArray: '6, 6',
-        opacity: 0.95
-      });
-      connectionsLayer.addLayer(polyline);
-
-      // 5. Distance Badge Pill over line midpoint
-      const midLat = (lat + nearestNode.lat) / 2;
-      const midLng = (lng + nearestNode.lng) / 2;
-      const badgeIcon = L.divIcon({
-        className: 'custom-dist-badge',
-        html: `
-          <div style="background: #0f172a; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.3);">
-            ⚡ ${distanceToNet} m a la red
-          </div>
-        `,
-        iconSize: [110, 26],
-        iconAnchor: [55, 13]
-      });
-      connectionsLayer.addLayer(L.marker([midLat, midLng], { icon: badgeIcon }));
-    }
-
-    // Smart Search Bar Handler (Coordinates or URL extraction)
-    function handleSmartSearch(val) {
+    function triggerSearch() {
+      const val = document.getElementById('smart-search-input').value;
       const errEl = document.getElementById('search-error');
-      if (val.trim().length < 4) {
-        errEl.classList.add('hidden');
-        return;
-      }
-
-      const cleanVal = val.trim();
+      if (!val || val.trim().length < 4) { errEl.innerText = "Ingrese una coordenada válida."; errEl.classList.remove('hidden'); return; }
       let coords = null;
-
-      // Direct coordinates: lat, lng
-      const directMatch = cleanVal.match(/^(-?\d+\.\d+)[,\s/]+(-?\d+\.\d+)$/);
-      if (directMatch) {
-        coords = { lat: parseFloat(directMatch[1]), lng: parseFloat(directMatch[2]) };
-      }
-
-      // Google Maps @lat,lng
-      if (!coords) {
-        const atMatch = cleanVal.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
-        if (atMatch) coords = { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) };
-      }
-
-      // Google Maps ?q=lat,lng
-      if (!coords) {
-        const qMatch = cleanVal.match(/[?&]q=(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/);
-        if (qMatch) coords = { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) };
-      }
-
-      // Waze ll=lat%2Clng
-      if (!coords) {
-        const wazeMatch = cleanVal.match(/[?&]ll=(-?\d+\.\d+)%2C(-?\d+\.\d+)/) || cleanVal.match(/[?&]ll=(-?\d+\.\d+),(-?\d+\.\d+)/);
-        if (wazeMatch) coords = { lat: parseFloat(wazeMatch[1]), lng: parseFloat(wazeMatch[2]) };
-      }
-
-      // Generic Costa Rica bounding coordinates
-      if (!coords) {
-        const crMatch = cleanVal.match(/([89]|10|11)\.\d{3,8}[,\s]+-(?:8[23456])\.\d{3,8}/);
-        if (crMatch) {
-          const parts = crMatch[0].split(/[,\s]+/);
-          if (parts.length >= 2) coords = { lat: parseFloat(parts[0]), lng: parseFloat(parts[1]) };
-        }
-      }
+      const directMatch = val.trim().match(/^(-?\d+\.\d+)[,\s/]+(-?\d+\.\d+)$/);
+      if (directMatch) coords = { lat: parseFloat(directMatch[1]), lng: parseFloat(directMatch[2]) };
+      if (!coords) { const atMatch = val.trim().match(/@(-?\d+\.\d+),(-?\d+\.\d+)/); if (atMatch) coords = { lat: parseFloat(atMatch[1]), lng: parseFloat(atMatch[2]) }; }
+      if (!coords) { const qMatch = val.trim().match(/[?&]q=(-?\d+\.\d+)[,\s]+(-?\d+\.\d+)/); if (qMatch) coords = { lat: parseFloat(qMatch[1]), lng: parseFloat(qMatch[2]) }; }
 
       if (coords && !isNaN(coords.lat) && !isNaN(coords.lng)) {
         errEl.classList.add('hidden');
-        document.getElementById('smart-search-input').value = '';
-        evaluateCoordinates(coords.lat, coords.lng, cleanVal.length > 25 ? 'Enlace Web' : cleanVal);
-      } else if (cleanVal.length > 12) {
-        errEl.innerText = "Formato no reconocido. Pegue coordenadas (ej: 10.018194, -84.216833) o un enlace de Waze/Google Maps.";
+        evaluateCoordinates(coords.lat, coords.lng, 'Búsqueda Manual');
+      } else {
+        errEl.innerText = "Formato no reconocido. Pegue coordenadas (ej: 10.018, -84.216).";
         errEl.classList.remove('hidden');
       }
     }
 
-    function handlePresetSelect(val) {
-      if (!val) return;
-      const parts = val.split(',');
-      if (parts.length === 2) {
-        const lat = parseFloat(parts[0]);
-        const lng = parseFloat(parts[1]);
-        const selector = document.getElementById('preset-selector');
-        const text = selector.options[selector.selectedIndex].text;
-        evaluateCoordinates(lat, lng, text);
+    function renderMapLayers() {
+      if (!map || !markersLayer || !connectionsLayer || !cablesLayer || !lastEvaluation) return;
+      markersLayer.clearLayers(); connectionsLayer.clearLayers(); cablesLayer.clearLayers();
+
+      const { lat, lng, nearestNode, minNodeDist, feasibility, distanceToNet } = lastEvaluation;
+      const colorHex = feasibility === 'FACTIBLE' ? '#10b981' : feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
+
+      if (showNodes) {
+        fiberCables.forEach(cable => {
+          if (!cable.pts || cable.pts.length < 2) return;
+          L.polyline(cable.pts, { color: '#081a2e', weight: 4.5, opacity: 0.9, interactive: false }).addTo(cablesLayer);
+          L.polyline(cable.pts, { color: '#00d4ff', weight: 2.2, opacity: 0.95, interactive: false }).addTo(cablesLayer);
+        });
+        footprintPolygons.forEach(poly => {
+          if (!poly.pts || poly.pts.length < 3) return;
+          L.polygon(poly.pts, { color: '#00d4ff', weight: 2, fillColor: '#0284c7', fillOpacity: 0.15, interactive: false }).addTo(cablesLayer);
+        });
+        const bounds = map.getBounds().pad(0.25);
+        fiberNodes.filter(node => bounds.contains([node.lat, node.lng])).slice(0, 350).forEach(node => {
+          const isNearest = node.id === nearestNode.id;
+          const icon = L.divIcon({
+            className: 'custom-node-icon',
+            html: `<div style="background-color: ${isNearest ? '#2563eb' : '#10b981'}; color: white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.7); border: 2px solid white; font-size: 13px; font-weight: bold;">⚡</div>`,
+            iconSize: [28, 28], iconAnchor: [14, 14]
+          });
+          const marker = L.marker([node.lat, node.lng], { icon });
+          marker.bindPopup(`<b>${node.name}</b>`);
+          markersLayer.addLayer(marker);
+        });
+      } else {
+        const nearestIcon = L.divIcon({
+          className: 'custom-node-icon',
+          html: `<div style="background-color: #2563eb; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.7); border: 2px solid white; font-size: 14px; font-weight: bold;">⚡</div>`,
+          iconSize: [30, 30], iconAnchor: [15, 15]
+        });
+        const nMarker = L.marker([nearestNode.lat, nearestNode.lng], { icon: nearestIcon });
+        nMarker.bindPopup(`<b>${nearestNode.name}</b><br>Nodo Asignado a ${minNodeDist}m`);
+        markersLayer.addLayer(nMarker);
       }
+
+      const evalIcon = L.divIcon({
+        className: 'custom-eval-icon',
+        html: `<div style="position: relative; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;"><div class="pulsing-pin" style="position: absolute; width: 42px; height: 42px; border-radius: 50%; background-color: ${colorHex}; opacity: 0.5;"></div><div style="background-color: ${colorHex}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.7); border: 2px solid white; font-size: 15px; z-index: 10;">📍</div></div>`,
+        iconSize: [40, 40], iconAnchor: [20, 20]
+      });
+      markersLayer.addLayer(L.marker([lat, lng], { icon: evalIcon }));
+
+      connectionsLayer.addLayer(L.polyline([[lat, lng], [nearestNode.lat, nearestNode.lng]], { color: colorHex, weight: 3.5, dashArray: '6, 6', opacity: 0.95 }));
+
+      const midLat = (lat + nearestNode.lat) / 2, midLng = (lng + nearestNode.lng) / 2;
+      const badgeIcon = L.divIcon({
+        className: 'custom-dist-badge',
+        html: `<div style="background: #0f172a; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; white-space: nowrap; box-shadow: 0 4px 12px rgba(0,0,0,0.7); border: 1px solid rgba(255,255,255,0.3);">⚡ ${distanceToNet} m a la red</div>`,
+        iconSize: [110, 26], iconAnchor: [55, 13]
+      });
+      connectionsLayer.addLayer(L.marker([midLat, midLng], { icon: badgeIcon }));
     }
 
     function useCurrentGPS() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
-          pos => {
-            evaluateCoordinates(Number(pos.coords.latitude.toFixed(5)), Number(pos.coords.longitude.toFixed(5)), 'Ubicación GPS');
-          },
-          () => alert("No se pudo obtener la ubicación GPS de su dispositivo.")
+          pos => { evaluateCoordinates(Number(pos.coords.latitude.toFixed(5)), Number(pos.coords.longitude.toFixed(5)), 'Ubicación GPS'); },
+          () => alert("No se pudo obtener la ubicación GPS.")
         );
-      } else {
-        alert("La geolocalización no es compatible con este navegador.");
       }
     }
 
-    // Recent Search History Handling
     function saveToHistory(lat, lng, queryName, feasibility) {
       let history = [];
-      try {
-        const stored = localStorage.getItem('adn_fibra_history_v4');
-        if (stored) history = JSON.parse(stored);
-      } catch { history = []; }
-
+      try { const stored = localStorage.getItem('adn_fibra_history_v4'); if (stored) history = JSON.parse(stored); } catch { history = []; }
       history = history.filter(item => !(Math.abs(item.lat - lat) < 0.0001 && Math.abs(item.lng - lng) < 0.0001));
-      history.unshift({
-        lat,
-        lng,
-        name: queryName || `Punto (${lat}, ${lng})`,
-        feasibility,
-        time: new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' })
-      });
-
+      history.unshift({ lat, lng, name: queryName || `Punto (${lat}, ${lng})`, feasibility, time: new Date().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' }) });
       if (history.length > 5) history = history.slice(0, 5);
       try { localStorage.setItem('adn_fibra_history_v4', JSON.stringify(history)); } catch {}
       renderHistory();
@@ -1725,33 +1182,12 @@
     function renderHistory() {
       const listEl = document.getElementById('history-list');
       let history = [];
-      try {
-        const stored = localStorage.getItem('adn_fibra_history_v4');
-        if (stored) history = JSON.parse(stored);
-      } catch { history = []; }
-
-      if (history.length === 0) {
-        listEl.innerHTML = `<div class="text-[11px] text-slate-500 italic py-1">No hay búsquedas recientes.</div>`;
-        return;
-      }
-
+      try { const stored = localStorage.getItem('adn_fibra_history_v4'); if (stored) history = JSON.parse(stored); } catch { history = []; }
+      if (history.length === 0) { listEl.innerHTML = `<div class="text-[11px] text-slate-500 italic py-1">No hay búsquedas recientes.</div>`; return; }
       let html = '';
       history.forEach(item => {
-        const badgeColor = item.feasibility === 'FACTIBLE' 
-          ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' 
-          : item.feasibility === 'ESTUDIO' 
-          ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' 
-          : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-        
-        html += `
-          <div onclick="evaluateCoordinates(${item.lat}, ${item.lng}, '${item.name.replace(/'/g, "")}')" class="bg-slate-800/60 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700/80 cursor-pointer transition flex items-center justify-between group">
-            <div class="truncate pr-2">
-              <div class="font-medium text-white text-xs truncate group-hover:text-blue-400 transition">${item.name}</div>
-              <div class="text-[10px] text-slate-400 font-mono">${item.lat}, ${item.lng} • ${item.time}</div>
-            </div>
-            <span class="px-2 py-0.5 rounded-md text-[9px] font-bold border shrink-0 ${badgeColor}">${item.feasibility}</span>
-          </div>
-        `;
+        const badgeColor = item.feasibility === 'FACTIBLE' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : item.feasibility === 'ESTUDIO' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
+        html += `<div onclick="evaluateCoordinates(${item.lat}, ${item.lng}, '${item.name.replace(/'/g, "")}')" class="bg-slate-800/60 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700/80 cursor-pointer transition flex items-center justify-between group"><div class="truncate pr-2"><div class="font-medium text-white text-xs truncate group-hover:text-blue-400 transition">${item.name}</div><div class="text-[10px] text-slate-400 font-mono">${item.lat}, ${item.lng} • ${item.time}</div></div><span class="px-2 py-0.5 rounded-md text-[9px] font-bold border shrink-0 ${badgeColor}">${item.feasibility}</span></div>`;
       });
       listEl.innerHTML = html;
     }
@@ -1761,92 +1197,42 @@
       renderHistory();
     }
 
-    // Modal Controls
-    function openNodesModal() {
-      filterNodesModal('');
-      document.getElementById('nodes-modal').classList.remove('hidden');
-      document.getElementById('nodes-modal').classList.add('flex');
-    }
-
-    function closeNodesModal() {
-      document.getElementById('nodes-modal').classList.add('hidden');
-      document.getElementById('nodes-modal').classList.remove('flex');
-    }
-
+    function openNodesModal() { filterNodesModal(''); document.getElementById('nodes-modal').classList.remove('hidden'); document.getElementById('nodes-modal').classList.add('flex'); }
+    function closeNodesModal() { document.getElementById('nodes-modal').classList.add('hidden'); document.getElementById('nodes-modal').classList.remove('flex'); }
     function filterNodesModal(query) {
       const listEl = document.getElementById('nodes-modal-list');
       const q = query.toLowerCase();
-      const filtered = fiberNodes.filter(n => 
-        n.name.toLowerCase().includes(q) || 
-        (n.code && n.code.toLowerCase().includes(q)) ||
-        (n.canton && n.canton.toLowerCase().includes(q)) || 
-        (n.province && n.province.toLowerCase().includes(q))
-      );
-      
+      const filtered = fiberNodes.filter(n => n.name.toLowerCase().includes(q) || (n.code && n.code.toLowerCase().includes(q)));
       let html = '';
       filtered.slice(0, 100).forEach(n => {
-        html += `
-          <div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-700/80 flex items-center justify-between">
-            <div>
-              <div class="font-bold text-white text-xs">${n.name}</div>
-              <div class="text-[11px] text-slate-400">📍 ${n.canton || ''}, ${n.province || ''} • ⚡ ${n.capacityGbps || 100} Gbps</div>
-            </div>
-            <button onclick="evaluateCoordinates(${n.lat}, ${n.lng}, '${n.name.replace(/'/g, "")}'); closeNodesModal();" class="px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-xl text-xs font-semibold hover:bg-blue-600/30 transition">
-              Evaluar
-            </button>
-          </div>
-        `;
+        html += `<div class="bg-slate-800/60 p-3 rounded-2xl border border-slate-700/80 flex items-center justify-between"><div><div class="font-bold text-white text-xs">${n.name}</div></div><button onclick="evaluateCoordinates(${n.lat}, ${n.lng}, '${n.name.replace(/'/g, "")}'); closeNodesModal();" class="px-3 py-1.5 bg-blue-600/20 text-blue-400 rounded-xl text-xs font-semibold hover:bg-blue-600/30 transition">Evaluar</button></div>`;
       });
-      if (filtered.length === 0) {
-        html = '<div class="text-xs text-slate-400 text-center py-4">No se encontraron nodos con ese criterio.</div>';
-      }
-      listEl.innerHTML = html;
+      listEl.innerHTML = html || '<div class="text-xs text-slate-400 text-center py-4">No se encontraron nodos.</div>';
     }
 
     async function openCertificateModal() {
       if (!lastEvaluation) return;
       const c = lastEvaluation;
-
       document.getElementById('cert-id').innerText = Math.floor(100000 + Math.random() * 900000);
       document.getElementById('cert-date').innerText = new Date().toLocaleDateString('es-CR', { year: 'numeric', month: 'long', day: 'numeric' });
 
-      const banner = document.getElementById('cert-status-banner');
-      banner.className = `p-4 rounded-2xl border flex items-center space-x-3 ${c.badgeClass}`;
+      document.getElementById('cert-status-banner').className = `p-4 rounded-2xl border flex items-center space-x-3 ${c.badgeClass}`;
       document.getElementById('cert-status-icon').innerHTML = c.iconSvg;
-      
-      const statusText = document.getElementById('cert-status-text');
-      statusText.className = `text-lg font-black ${c.titleColor}`;
-      statusText.innerText = c.title;
-
-      document.getElementById('cert-huella-detail').innerText = `${c.subtitle} • ${c.condoSecText}`;
+      document.getElementById('cert-status-text').className = `text-lg font-black ${c.titleColor}`;
+      document.getElementById('cert-status-text').innerText = c.title;
+      document.getElementById('cert-huella-detail').innerText = c.subtitle;
 
       const huellaBadge = c.feasibility === 'FACTIBLE' ? '🟢' : c.feasibility === 'ESTUDIO' ? '🟠' : '🔴';
-      const huellaReport = c.huellaStatus === 'adentro'
-        ? 'Huella FTTH → adentro (0 m del borde) 🟢'
-        : `Huella FTTH → afuera, a ${c.huellaDist} m del borde ${huellaBadge}`;
+      const huellaReport = c.huellaStatus === 'adentro' ? 'Huella FTTH → adentro (0 m) 🟢' : `Huella FTTH → afuera, a ${c.huellaDist} m del borde ${huellaBadge}`;
       document.getElementById('cert-huella-metric').innerText = huellaReport;
 
-      const certCondoAlert = document.getElementById('cert-condo-alert');
-      if (c.condoAlert) {
-        certCondoAlert.innerText = c.condoAlert;
-        certCondoAlert.classList.remove('hidden');
-      } else {
-        certCondoAlert.classList.add('hidden');
-      }
-
+      if (c.condoAlert) { document.getElementById('cert-condo-alert').innerText = c.condoAlert; document.getElementById('cert-condo-alert').classList.remove('hidden'); } else { document.getElementById('cert-condo-alert').classList.add('hidden'); }
       document.getElementById('cert-coords').innerText = `${c.lat}, ${c.lng}`;
       document.getElementById('cert-prov-canton').innerText = `${c.geo.provincia}, ${c.geo.canton}`;
       document.getElementById('cert-dist-barrio').innerText = `${c.geo.distrito}, ${c.geo.barrio}`;
       document.getElementById('cert-street').innerText = c.geo.exactStreet;
 
-      const condoWrapper = document.getElementById('cert-condo-wrapper');
-      if (c.nearestCondo && c.minCondoDist < 2000) {
-        condoWrapper.classList.remove('hidden');
-        document.getElementById('cert-condo').innerText = `${c.nearestCondo.name} (${c.minCondoDist}m)`;
-      } else {
-        condoWrapper.classList.add('hidden');
-      }
-
+      if (c.nearestCondo && c.minCondoDist < 2000) { document.getElementById('cert-condo-wrapper').classList.remove('hidden'); document.getElementById('cert-condo').innerText = `${c.nearestCondo.name} (${c.minCondoDist}m)`; } else { document.getElementById('cert-condo-wrapper').classList.add('hidden'); }
       document.getElementById('cert-colloquial').innerText = `"${c.colloquial}"`;
       document.getElementById('cert-node').innerText = c.nearestNode.name;
       document.getElementById('cert-node-code').innerText = c.nearestNode.code || 'CR-FTTH';
@@ -1858,275 +1244,86 @@
       document.getElementById('cert-modal').classList.remove('hidden');
       document.getElementById('cert-modal').classList.add('flex');
 
-      // Populate on-map legend
-      const legendDot = document.getElementById('cert-map-legend-dot');
-      if (legendDot) {
-        legendDot.className = `w-2.5 h-2.5 rounded-full inline-block shrink-0 shadow-sm ${c.feasibility === 'FACTIBLE' ? 'bg-emerald-400' : c.feasibility === 'ESTUDIO' ? 'bg-amber-400' : 'bg-rose-400'}`;
-      }
       document.getElementById('cert-map-legend-coords').innerText = `${c.lat}, ${c.lng}`;
       document.getElementById('cert-map-legend-node').innerText = `${c.nearestNode.name}`;
       document.getElementById('cert-map-legend-dist').innerText = `${c.distanceToNet}m a la red`;
       document.getElementById('cert-map-legend-routing').innerText = `~${c.routingMin} – ${c.routingMax}m`;
-      document.getElementById('cert-map-legend-huella').innerText = `📏 Huella FTTH: ${huellaReport}`;
 
-      // Initialize or update the dedicated Certificate Leaflet Map (CARTO DARK MATTER)
       setTimeout(() => {
-        const certMapEl = document.getElementById('cert-map');
-        if (!certMapEl) return;
-
         if (!certMap) {
-          certMap = L.map('cert-map', {
-            zoomControl: false,
-            attributionControl: false,
-            scrollWheelZoom: false
-          });
-
-          certDarkLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{x}/{y}', {
-            minZoom: 1,
-            maxNativeZoom: 16,
-            maxZoom: 19,
-            crossOrigin: 'anonymous',
-            attribution: '&copy; Esri &copy; OpenStreetMap'
-          });
-
+          certMap = L.map('cert-map', { zoomControl: false, attributionControl: false, scrollWheelZoom: false });
+          certDarkLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 19, maxZoom: 21, crossOrigin: 'anonymous' });
+          certLabelsLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxNativeZoom: 19, maxZoom: 21, crossOrigin: 'anonymous' });
           certDarkLayer.addTo(certMap);
+          certLabelsLayer.addTo(certMap);
           certLayersGroup = L.layerGroup().addTo(certMap);
         }
-
         certLayersGroup.clearLayers();
-
-        // Render Footprint Polygons on Certificate Map (CartoDB Dark Matter with bright cyan border)
         footprintPolygons.forEach(poly => {
           if (!poly.pts || poly.pts.length < 3) return;
-          L.polygon(poly.pts, {
-            color: '#00d4ff',
-            weight: 2.5,
-            fillColor: '#00d4ff',
-            fillOpacity: 0.22,
-            interactive: false
-          }).addTo(certLayersGroup);
+          L.polygon(poly.pts, { color: '#00d4ff', weight: 2.5, fillColor: '#00d4ff', fillOpacity: 0.22, interactive: false }).addTo(certLayersGroup);
         });
-
-        // Render KML fiber cables on certMap in bright blue with defined border
         fiberCables.forEach(cable => {
           if (!cable.pts || cable.pts.length < 2) return;
-          L.polyline(cable.pts, {
-            color: '#081a2e',
-            weight: 4.5,
-            opacity: 0.9,
-            interactive: false
-          }).addTo(certLayersGroup);
-          L.polyline(cable.pts, {
-            color: '#00d4ff',
-            weight: 2.2,
-            opacity: 0.95,
-            interactive: false
-          }).addTo(certLayersGroup);
+          L.polyline(cable.pts, { color: '#081a2e', weight: 4.5, opacity: 0.9, interactive: false }).addTo(certLayersGroup);
+          L.polyline(cable.pts, { color: '#00d4ff', weight: 2.2, opacity: 0.95, interactive: false }).addTo(certLayersGroup);
         });
-
         const statusColor = c.feasibility === 'FACTIBLE' ? '#10b981' : c.feasibility === 'ESTUDIO' ? '#f59e0b' : '#ef4444';
-
-        // 1. Evaluated Coordinate Marker (Client)
         const clientIcon = L.divIcon({
           className: 'custom-cert-client-icon',
-          html: `
-            <div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;">
-              <div style="
-                position: absolute;
-                width: 38px;
-                height: 38px;
-                border-radius: 50%;
-                background-color: ${statusColor};
-                opacity: 0.45;
-                animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
-              "></div>
-              <div style="
-                background-color: ${statusColor};
-                color: white;
-                width: 30px;
-                height: 30px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 4px 14px rgba(0,0,0,0.7);
-                border: 2.5px solid white;
-                font-size: 14px;
-                font-weight: bold;
-                z-index: 10;
-              ">📍</div>
-            </div>
-          `,
-          iconSize: [36, 36],
-          iconAnchor: [18, 18]
+          html: `<div style="position: relative; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;"><div style="position: absolute; width: 38px; height: 38px; border-radius: 50%; background-color: ${statusColor}; opacity: 0.45; animation: ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div><div style="background-color: ${statusColor}; color: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 14px rgba(0,0,0,0.7); border: 2.5px solid white; font-size: 14px; font-weight: bold; z-index: 10;">📍</div></div>`,
+          iconSize: [36, 36], iconAnchor: [18, 18]
         });
-
-        const clientMarker = L.marker([c.lat, c.lng], { icon: clientIcon });
-        clientMarker.bindPopup(`<b>Punto Evaluado</b><br>Coordenadas: ${c.lat}, ${c.lng}<br>Estado: <b>${c.title}</b>`);
-        certLayersGroup.addLayer(clientMarker);
-
-        // 2. Assigned Fiber Node Marker
+        certLayersGroup.addLayer(L.marker([c.lat, c.lng], { icon: clientIcon }));
         const nodeIcon = L.divIcon({
           className: 'custom-cert-node-icon',
-          html: `
-            <div style="
-              background: linear-gradient(135deg, #0284c7, #2563eb);
-              color: white;
-              width: 34px;
-              height: 34px;
-              border-radius: 50%;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              box-shadow: 0 4px 16px rgba(2, 132, 199, 0.8);
-              border: 2.5px solid white;
-              font-size: 16px;
-              font-weight: bold;
-            ">⚡</div>
-          `,
-          iconSize: [34, 34],
-          iconAnchor: [17, 17]
+          html: `<div style="background: linear-gradient(135deg, #0284c7, #2563eb); color: white; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 16px rgba(2, 132, 199, 0.8); border: 2.5px solid white; font-size: 16px; font-weight: bold;">⚡</div>`,
+          iconSize: [34, 34], iconAnchor: [17, 17]
         });
-
-        const nodeMarker = L.marker([c.nearestNode.lat, c.nearestNode.lng], { icon: nodeIcon });
-        nodeMarker.bindPopup(`<b>${c.nearestNode.name}</b><br>Código: ${c.nearestNode.code || 'CR-FTTH'}<br>Distancia: ${c.minNodeDist}m`);
-        certLayersGroup.addLayer(nodeMarker);
-
-        // 3. High-contrast Dashed Connection Line
-        const routeLine = L.polyline([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]], {
-          color: '#38bdf8',
-          weight: 3.5,
-          dashArray: '8, 8',
-          opacity: 0.95
-        });
-        certLayersGroup.addLayer(routeLine);
-
-        // 4. Central Distance Badge on the line
-        const midLat = (c.lat + c.nearestNode.lat) / 2;
-        const midLng = (c.lng + c.nearestNode.lng) / 2;
-        const distBadgeIcon = L.divIcon({
-          className: 'custom-cert-dist-badge',
-          html: `
-            <div style="
-              background: #0284c7;
-              color: #ffffff;
-              padding: 4px 12px;
-              border-radius: 14px;
-              font-size: 11px;
-              font-weight: 900;
-              white-space: nowrap;
-              box-shadow: 0 4px 14px rgba(0,0,0,0.7);
-              border: 2px solid white;
-              transform: translateY(-50%);
-            ">
-              📏 ${c.distanceToNet}m a la red
-            </div>
-          `,
-          iconSize: [140, 26],
-          iconAnchor: [70, 13]
-        });
-        certLayersGroup.addLayer(L.marker([midLat, midLng], { icon: distBadgeIcon }));
-
-        // Auto-fit bounds including both coordinate and node with comfortable padding
-        const bounds = L.latLngBounds([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]]);
-        certMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+        certLayersGroup.addLayer(L.marker([c.nearestNode.lat, c.nearestNode.lng], { icon: nodeIcon }));
+        certLayersGroup.addLayer(L.polyline([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]], { color: '#38bdf8', weight: 3.5, dashArray: '8, 8', opacity: 0.95 }));
+        
         certMap.invalidateSize();
+        certMap.fitBounds(L.latLngBounds([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]]), { padding: [60, 60], maxZoom: 18 });
       }, 150);
     }
 
     function resetCertMapView() {
       if (!certMap || !lastEvaluation) return;
-      const c = lastEvaluation;
-      const bounds = L.latLngBounds([[c.lat, c.lng], [c.nearestNode.lat, c.nearestNode.lng]]);
-      certMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 17 });
+      certMap.invalidateSize();
+      certMap.fitBounds(L.latLngBounds([[lastEvaluation.lat, lastEvaluation.lng], [lastEvaluation.nearestNode.lat, lastEvaluation.nearestNode.lng]]), { padding: [60, 60], maxZoom: 18 });
     }
 
-    function closeCertificateModal() {
-      document.getElementById('cert-modal').classList.add('hidden');
-      document.getElementById('cert-modal').classList.remove('flex');
-    }
+    function closeCertificateModal() { document.getElementById('cert-modal').classList.add('hidden'); document.getElementById('cert-modal').classList.remove('flex'); }
 
-    // CORRECCIÓN CRÍTICA DE CAPTURA EN CERTIFICADO (HTML2CANVAS COMPLETO SIN CORTES)
     async function downloadCertificatePng() {
       const modal = document.getElementById('printable-certificate');
       if (!modal) return;
-
       const btn = document.getElementById('btn-download-cert');
       const originalBtnText = btn ? btn.innerHTML : '';
-      if (btn) {
-        btn.innerHTML = `
-          <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-          </svg>
-          <span>Generando...</span>
-        `;
-        btn.disabled = true;
-      }
-
-      const prevOverflow = modal.style.overflow;
-      const prevHeight = modal.style.height;
-      const prevMaxHeight = modal.style.maxHeight;
-      const prevScrollTop = modal.scrollTop;
-
+      if (btn) { btn.innerHTML = `<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg><span>Generando...</span>`; btn.disabled = true; }
+      const prevOverflow = modal.style.overflow, prevHeight = modal.style.height, prevMaxHeight = modal.style.maxHeight, prevScrollTop = modal.scrollTop;
       try {
-        modal.scrollTop = 0;
-        const fullHeight = modal.scrollHeight;
-        const fullWidth = modal.scrollWidth;
-
-        modal.style.overflow = 'visible';
-        modal.style.maxHeight = 'none';
-        modal.style.height = `${fullHeight}px`;
-
+        modal.scrollTop = 0; const fullHeight = modal.scrollHeight, fullWidth = modal.scrollWidth;
+        modal.style.overflow = 'visible'; modal.style.maxHeight = 'none'; modal.style.height = `${fullHeight}px`;
         await new Promise(resolve => setTimeout(resolve, 150));
-
         const canvas = await html2canvas(modal, {
-          useCORS: true,
-          allowTaint: false,
-          logging: false,
-          scale: 2,
-          scrollX: 0,
-          scrollY: 0,
-          windowWidth: fullWidth,
-          windowHeight: fullHeight,
+          useCORS: true, allowTaint: false, logging: false, scale: 2, scrollX: 0, scrollY: 0, windowWidth: fullWidth, windowHeight: fullHeight,
           onclone: (clonedDoc) => {
             const clonedModal = clonedDoc.getElementById('printable-certificate');
-            if (clonedModal) {
-              clonedModal.style.overflow = 'visible';
-              clonedModal.style.maxHeight = 'none';
-              clonedModal.style.height = 'auto';
-              clonedModal.style.width = `${modal.offsetWidth}px`;
-            }
+            if (clonedModal) { clonedModal.style.overflow = 'visible'; clonedModal.style.maxHeight = 'none'; clonedModal.style.height = 'auto'; clonedModal.style.width = `${modal.offsetWidth}px`; }
           }
         });
-
         const link = document.createElement('a');
-        const safeLat = lastEvaluation ? lastEvaluation.lat : '0';
-        const safeLng = lastEvaluation ? lastEvaluation.lng : '0';
-        link.download = `Certificado-ADN-v4.11-${safeLat}-${safeLng}.png`;
-        link.href = canvas.toDataURL('image/png');
-        link.click();
-      } catch (err) {
-        console.error('Error generating certificate PNG:', err);
-        alert('Error al descargar la imagen del certificado.');
-      } finally {
-        modal.style.overflow = prevOverflow;
-        modal.style.height = prevHeight;
-        modal.style.maxHeight = prevMaxHeight;
-        modal.scrollTop = prevScrollTop;
-
-        if (btn) {
-          btn.innerHTML = originalBtnText;
-          btn.disabled = false;
-        }
+        link.download = `Certificado-ADN-v4.11-${lastEvaluation ? lastEvaluation.lat : '0'}-${lastEvaluation ? lastEvaluation.lng : '0'}.png`;
+        link.href = canvas.toDataURL('image/png'); link.click();
+      } catch (err) { alert('Error al descargar el certificado.'); } finally {
+        modal.style.overflow = prevOverflow; modal.style.height = prevHeight; modal.style.maxHeight = prevMaxHeight; modal.scrollTop = prevScrollTop;
+        if (btn) { btn.innerHTML = originalBtnText; btn.disabled = false; }
       }
     }
 
-    // Initialize application on window load
-    window.addEventListener('DOMContentLoaded', () => {
-      initMap();
-      renderHistory();
-    });
+    window.addEventListener('DOMContentLoaded', () => { initMap(); renderHistory(); });
   </script>
 </body>
 </html>
