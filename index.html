@@ -95,6 +95,28 @@
           <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path></svg>
           <span id="nodos-count-btn">Inventario (<span id="nodes-count-number">0</span>)</span>
         </button>
+
+        <!-- Firebase Auth UI: Google Sign In / User Profile -->
+        <div id="auth-container" class="flex items-center">
+          <button id="btn-login-google" onclick="window.loginWithGoogle()" class="inline-flex items-center space-x-2 px-3 py-1.5 rounded-xl text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition shadow-sm border border-blue-500/40">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            <span class="hidden sm:inline">Iniciar Sesión</span>
+            <span class="sm:hidden">Acceder</span>
+          </button>
+          
+          <div id="user-profile-bar" class="hidden items-center space-x-2 bg-slate-800/90 border border-slate-700/80 rounded-xl px-2.5 py-1 text-xs">
+            <img id="user-avatar" src="" alt="Avatar" class="w-6 h-6 rounded-full border border-blue-400 object-cover" />
+            <div class="hidden md:flex flex-col text-left">
+              <span id="user-name" class="font-bold text-white text-[11px] leading-tight max-w-[120px] truncate"></span>
+              <span class="text-[9px] text-emerald-400 font-medium flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Firebase Cloud
+              </span>
+            </div>
+            <button onclick="window.logoutUser()" title="Cerrar sesión" class="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-700/60 transition ml-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -156,9 +178,10 @@
 
         <div class="space-y-2 pt-3 border-t border-slate-800 mt-2">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center space-x-1.5">
               <svg class="w-3.5 h-3.5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
               <span>Historial Reciente</span>
+              <span id="cloud-sync-badge" class="hidden px-1.5 py-0.5 rounded text-[9px] bg-blue-500/20 text-blue-300 font-semibold border border-blue-500/30">☁️ Cloud</span>
             </span>
             <button onclick="clearHistory()" class="text-[10px] text-slate-500 hover:text-rose-400 transition font-medium">Borrar</button>
           </div>
@@ -437,7 +460,78 @@
   </div>
 
   <!-- MOTOR JAVASCRIPT PRINCIPAL -->
-  <script>
+  <script type="module">
+    import {
+      auth,
+      db,
+      signInWithGoogle,
+      signOutUser,
+      saveValidationRecord,
+      saveCertificateRecord,
+      subscribeToUserValidations,
+      testConnection
+    } from '/src/firebase.ts';
+    import { onAuthStateChanged } from 'firebase/auth';
+
+    let cloudValidations = [];
+    let unsubscribeValidations = null;
+
+    onAuthStateChanged(auth, (user) => {
+      const loginBtn = document.getElementById('btn-login-google');
+      const profileBar = document.getElementById('user-profile-bar');
+      const avatarImg = document.getElementById('user-avatar');
+      const nameEl = document.getElementById('user-name');
+      const cloudBadge = document.getElementById('cloud-sync-badge');
+
+      if (user) {
+        if (loginBtn) loginBtn.classList.add('hidden');
+        if (profileBar) {
+          profileBar.classList.remove('hidden');
+          profileBar.classList.add('flex');
+        }
+        if (avatarImg) avatarImg.src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email || 'U')}&background=2563eb&color=fff`;
+        if (nameEl) nameEl.innerText = user.displayName || user.email?.split('@')[0] || 'Usuario';
+        if (cloudBadge) cloudBadge.classList.remove('hidden');
+
+        if (unsubscribeValidations) unsubscribeValidations();
+        unsubscribeValidations = subscribeToUserValidations((items) => {
+          cloudValidations = items;
+          renderHistory();
+        }, (err) => {
+          console.warn('Fallback a historial local:', err);
+        });
+      } else {
+        if (loginBtn) loginBtn.classList.remove('hidden');
+        if (profileBar) {
+          profileBar.classList.add('hidden');
+          profileBar.classList.remove('flex');
+        }
+        if (cloudBadge) cloudBadge.classList.add('hidden');
+        if (unsubscribeValidations) {
+          unsubscribeValidations();
+          unsubscribeValidations = null;
+        }
+        cloudValidations = [];
+        renderHistory();
+      }
+    });
+
+    window.loginWithGoogle = async () => {
+      try {
+        await signInWithGoogle();
+      } catch (err) {
+        console.error('Error al iniciar sesión con Google:', err);
+      }
+    };
+
+    window.logoutUser = async () => {
+      try {
+        await signOutUser();
+      } catch (err) {
+        console.error('Error al cerrar sesión:', err);
+      }
+    };
+
     // Almacenes de Datos Globales
     let fiberNodes = [];
     let fiberCables = [];
@@ -1081,6 +1175,23 @@
       document.getElementById('subsequent-nodes-list').innerHTML = subHtml;
 
       saveToHistory(lat, lng, sourceName || nearestNode.name, feasibility);
+
+      // Persistir evaluación en Firestore si el usuario está autenticado
+      if (auth.currentUser) {
+        saveValidationRecord({
+          ticketId: `ADN-${Math.floor(100000 + Math.random() * 900000)}`,
+          lat: lat,
+          lng: lng,
+          status: feasibility === 'FACTIBLE' ? 'con_cobertura' : feasibility === 'ESTUDIO' ? 'al_borde' : 'sin_cobertura',
+          distanceToNet: distanceToNet,
+          distanceToNode: minNodeDist,
+          nearestNode: nearestNode?.name,
+          nearestLine: nearestCable?.name,
+          colloquialAddress: defaultColloquial,
+          clientName: sourceName || nearestNode?.name
+        }).catch(err => console.warn('[Firebase] No se pudo guardar la evaluación en Firestore:', err));
+      }
+
       map.setView([lat, lng], 17, { animate: true });
       renderMapLayers();
 
@@ -1211,13 +1322,35 @@
 
     function renderHistory() {
       const listEl = document.getElementById('history-list');
-      let history = [];
-      try { const stored = localStorage.getItem('adn_fibra_history_v4'); if (stored) history = JSON.parse(stored); } catch { history = []; }
-      if (history.length === 0) { listEl.innerHTML = `<div class="text-[11px] text-slate-500 italic py-1">No hay búsquedas recientes.</div>`; return; }
+      if (!listEl) return;
+
+      let itemsToRender = [];
+      if (auth.currentUser && cloudValidations && cloudValidations.length > 0) {
+        itemsToRender = cloudValidations.map(c => ({
+          lat: c.lat,
+          lng: c.lng,
+          name: c.clientName || c.nearestNode || `Punto (${c.lat}, ${c.lng})`,
+          feasibility: c.status === 'con_cobertura' ? 'FACTIBLE' : c.status === 'al_borde' ? 'ESTUDIO' : 'NO_FACTIBLE',
+          time: c.createdAt?.toDate ? c.createdAt.toDate().toLocaleTimeString('es-CR', { hour: '2-digit', minute: '2-digit' }) : 'Reciente',
+          isCloud: true
+        }));
+      } else {
+        try {
+          const stored = localStorage.getItem('adn_fibra_history_v4');
+          if (stored) itemsToRender = JSON.parse(stored);
+        } catch { itemsToRender = []; }
+      }
+
+      if (itemsToRender.length === 0) {
+        listEl.innerHTML = `<div class="text-[11px] text-slate-500 italic py-1">No hay búsquedas recientes.</div>`;
+        return;
+      }
+
       let html = '';
-      history.forEach(item => {
+      itemsToRender.slice(0, 5).forEach(item => {
         const badgeColor = item.feasibility === 'FACTIBLE' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : item.feasibility === 'ESTUDIO' ? 'text-amber-400 bg-amber-500/10 border-amber-500/20' : 'text-rose-400 bg-rose-500/10 border-rose-500/20';
-        html += `<div onclick="evaluateCoordinates(${item.lat}, ${item.lng}, '${item.name.replace(/'/g, "")}')" class="bg-slate-800/60 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700/80 cursor-pointer transition flex items-center justify-between group"><div class="truncate pr-2"><div class="font-medium text-white text-xs truncate group-hover:text-blue-400 transition">${item.name}</div><div class="text-[10px] text-slate-400 font-mono">${item.lat}, ${item.lng} • ${item.time}</div></div><span class="px-2 py-0.5 rounded-md text-[9px] font-bold border shrink-0 ${badgeColor}">${item.feasibility}</span></div>`;
+        const cloudIcon = item.isCloud ? '<span class="text-[9px] text-blue-400 mr-1" title="Sincronizado en Firebase Firestore">☁️</span>' : '';
+        html += `<div onclick="evaluateCoordinates(${item.lat}, ${item.lng}, '${item.name.replace(/'/g, "")}')" class="bg-slate-800/60 hover:bg-slate-800 p-2.5 rounded-xl border border-slate-700/80 cursor-pointer transition flex items-center justify-between group"><div class="truncate pr-2"><div class="font-medium text-white text-xs truncate group-hover:text-blue-400 transition">${cloudIcon}${item.name}</div><div class="text-[10px] text-slate-400 font-mono">${item.lat}, ${item.lng} • ${item.time}</div></div><span class="px-2 py-0.5 rounded-md text-[9px] font-bold border shrink-0 ${badgeColor}">${item.feasibility}</span></div>`;
       });
       listEl.innerHTML = html;
     }
@@ -1404,6 +1537,19 @@
         link.download = `Certificado-ADN-v4.11-${lastEvaluation ? lastEvaluation.lat : '0'}-${lastEvaluation ? lastEvaluation.lng : '0'}.png`;
         link.href = canvas.toDataURL('image/png', 1.0); 
         link.click();
+
+        // Persistir registro oficial de certificado en Firestore si está autenticado
+        if (auth.currentUser && lastEvaluation) {
+          saveCertificateRecord({
+            ticketId: `CERT-${document.getElementById('cert-id')?.innerText || Date.now()}`,
+            clientName: 'Cliente Oficial ADN',
+            lat: lastEvaluation.lat,
+            lng: lastEvaluation.lng,
+            status: lastEvaluation.feasibility,
+            distanceToNet: lastEvaluation.distanceToNet,
+            colloquialAddress: lastEvaluation.colloquial
+          }).catch(err => console.warn('[Firebase] No se pudo guardar el certificado en Firestore:', err));
+        }
       } catch (err) { 
         console.error(err);
         alert('Error al generar el PNG. Puede usar el botón Imprimir -> Guardar como PDF.'); 
@@ -1414,6 +1560,19 @@
         if (btn) { btn.innerHTML = originalBtnText; btn.disabled = false; }
       }
     }
+
+    // Exponer funciones en window para invocación desde atributos HTML
+    window.openNodesModal = openNodesModal;
+    window.closeNodesModal = closeNodesModal;
+    window.filterNodesModal = filterNodesModal;
+    window.useCurrentGPS = useCurrentGPS;
+    window.toggleNodesVisibility = toggleNodesVisibility;
+    window.triggerSearch = triggerSearch;
+    window.clearHistory = clearHistory;
+    window.openCertificateModal = openCertificateModal;
+    window.closeCertificateModal = closeCertificateModal;
+    window.downloadCertificatePng = downloadCertificatePng;
+    window.evaluateCoordinates = evaluateCoordinates;
 
     window.addEventListener('DOMContentLoaded', () => {
       initMap();

@@ -1,0 +1,142 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Pillar 4.1)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions (Pillar 3 & 4)
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isVerifiedUser(userId) {
+      return isOwner(userId) && (request.auth.token.email_verified == true || request.auth.token.firebase.sign_in_provider == 'google.com');
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Connection testing endpoint for boot verification
+    match /test/{testId} {
+      allow get: if isValidId(testId);
+    }
+
+    // Entity Validation: User
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'createdAt', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt'])
+        && data.id is string && data.id == request.auth.uid && data.id.size() <= 128
+        && data.email is string && data.email.size() <= 256
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128))
+        && (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // Entity Validation: Validation
+    function isValidValidation(data) {
+      return data.keys().hasAll(['id', 'userId', 'ticketId', 'lat', 'lng', 'status', 'distanceToNet', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'ticketId', 'lat', 'lng', 'status', 'distanceToNet', 'distanceToNode', 'nearestNode', 'nearestLine', 'colloquialAddress', 'clientName', 'createdAt'])
+        && data.id is string && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128
+        && data.ticketId is string && data.ticketId.size() <= 64
+        && (data.lat is number || data.lat is int)
+        && (data.lng is number || data.lng is int)
+        && data.status is string && data.status in ['con_cobertura', 'al_borde', 'sin_cobertura']
+        && (data.distanceToNet is number || data.distanceToNet is int)
+        && (!('distanceToNode' in data) || (data.distanceToNode is number || data.distanceToNode is int))
+        && (!('nearestNode' in data) || (data.nearestNode is string && data.nearestNode.size() <= 256))
+        && (!('nearestLine' in data) || (data.nearestLine is string && data.nearestLine.size() <= 256))
+        && (!('colloquialAddress' in data) || (data.colloquialAddress is string && data.colloquialAddress.size() <= 512))
+        && (!('clientName' in data) || (data.clientName is string && data.clientName.size() <= 128))
+        && data.createdAt is timestamp;
+    }
+
+    // Entity Validation: Certificate
+    function isValidCertificate(data) {
+      return data.keys().hasAll(['id', 'userId', 'ticketId', 'lat', 'lng', 'status', 'distanceToNet', 'createdAt'])
+        && data.keys().hasOnly(['id', 'userId', 'ticketId', 'clientName', 'lat', 'lng', 'status', 'distanceToNet', 'colloquialAddress', 'createdAt'])
+        && data.id is string && data.id.size() <= 128 && data.id.matches('^[a-zA-Z0-9_\\-]+$')
+        && data.userId is string && data.userId == request.auth.uid && data.userId.size() <= 128
+        && data.ticketId is string && data.ticketId.size() <= 64
+        && (!('clientName' in data) || (data.clientName is string && data.clientName.size() <= 128))
+        && (data.lat is number || data.lat is int)
+        && (data.lng is number || data.lng is int)
+        && data.status is string && data.status.size() <= 64
+        && (data.distanceToNet is number || data.distanceToNet is int)
+        && (!('colloquialAddress' in data) || (data.colloquialAddress is string && data.colloquialAddress.size() <= 512))
+        && data.createdAt is timestamp;
+    }
+
+    // User profiles collection
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false;
+
+      allow create: if isVerifiedUser(userId)
+        && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isVerifiedUser(userId)
+        && isValidId(userId)
+        && isValidUser(incoming())
+        && incoming().id == existing().id
+        && incoming().email == existing().email
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'updatedAt']);
+
+      allow delete: if false;
+
+      // Subcollection: Validations (Master Gate enforces parent user exists)
+      match /validations/{validationId} {
+        allow get, delete: if isOwner(userId) && isValidId(validationId);
+        allow list: if isOwner(userId);
+
+        allow create: if isVerifiedUser(userId)
+          && isValidId(validationId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidValidation(incoming())
+          && incoming().id == validationId
+          && incoming().userId == userId
+          && incoming().createdAt == request.time;
+
+        allow update: if false; // Evaluations are immutable historical records
+      }
+
+      // Subcollection: Certificates (Master Gate enforces parent user exists)
+      match /certificates/{certificateId} {
+        allow get, delete: if isOwner(userId) && isValidId(certificateId);
+        allow list: if isOwner(userId);
+
+        allow create: if isVerifiedUser(userId)
+          && isValidId(certificateId)
+          && exists(/databases/$(database)/documents/users/$(userId))
+          && isValidCertificate(incoming())
+          && incoming().id == certificateId
+          && incoming().userId == userId
+          && incoming().createdAt == request.time;
+
+        allow update: if false; // Official certificates are immutable once issued
+      }
+    }
+  }
+}

@@ -1,0 +1,198 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile representation in the validation system",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique user UID matching auth",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 128
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "User avatar photo URL",
+          "maxLength": 512
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Account last update timestamp"
+        }
+      },
+      "required": ["id", "email", "createdAt", "updatedAt"]
+    },
+    "Validation": {
+      "title": "Validation",
+      "description": "Evaluation of network fiber optic coverage for a client location",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the validation record",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "User ID who performed the evaluation",
+          "maxLength": 128
+        },
+        "ticketId": {
+          "type": "string",
+          "description": "Validation ticket code e.g. ADN-2026-XXXX",
+          "maxLength": 64
+        },
+        "lat": {
+          "type": "number",
+          "description": "Latitude coordinate of target location"
+        },
+        "lng": {
+          "type": "number",
+          "description": "Longitude coordinate of target location"
+        },
+        "status": {
+          "type": "string",
+          "description": "Coverage status result",
+          "enum": ["con_cobertura", "al_borde", "sin_cobertura"]
+        },
+        "distanceToNet": {
+          "type": "number",
+          "description": "Geodetic distance in meters to closest fiber line"
+        },
+        "distanceToNode": {
+          "type": "number",
+          "description": "Geodetic distance in meters to closest splice closure/node"
+        },
+        "nearestNode": {
+          "type": "string",
+          "description": "Name or identifier of nearest node",
+          "maxLength": 256
+        },
+        "nearestLine": {
+          "type": "string",
+          "description": "Name of nearest cable segment",
+          "maxLength": 256
+        },
+        "colloquialAddress": {
+          "type": "string",
+          "description": "Traditional landmark-based address reference",
+          "maxLength": 512
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Name of client or prospect",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Evaluation creation timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "ticketId",
+        "lat",
+        "lng",
+        "status",
+        "distanceToNet",
+        "createdAt"
+      ]
+    },
+    "Certificate": {
+      "title": "Certificate",
+      "description": "Official FTTH Feasibility Certificate document record",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique certificate identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "User ID who issued the certificate",
+          "maxLength": 128
+        },
+        "ticketId": {
+          "type": "string",
+          "description": "Validation ticket code",
+          "maxLength": 64
+        },
+        "clientName": {
+          "type": "string",
+          "description": "Client name",
+          "maxLength": 128
+        },
+        "lat": {
+          "type": "number",
+          "description": "Latitude"
+        },
+        "lng": {
+          "type": "number",
+          "description": "Longitude"
+        },
+        "status": {
+          "type": "string",
+          "description": "Feasibility status label",
+          "maxLength": 64
+        },
+        "distanceToNet": {
+          "type": "number",
+          "description": "Distance to network in meters"
+        },
+        "colloquialAddress": {
+          "type": "string",
+          "description": "Traditional address",
+          "maxLength": 512
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Certificate issuance timestamp"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "ticketId",
+        "lat",
+        "lng",
+        "status",
+        "distanceToNet",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User account profiles"
+    },
+    "/users/{userId}/validations/{validationId}": {
+      "schema": "Validation",
+      "description": "User network coverage validations"
+    },
+    "/users/{userId}/certificates/{certificateId}": {
+      "schema": "Certificate",
+      "description": "User official certificates"
+    }
+  }
+}
